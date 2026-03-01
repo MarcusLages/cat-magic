@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -71,6 +72,12 @@
       <span id="squareStatus" class="pill">Square: 0 / 10</span>
       <button id="plusSquare">+</button>
     </div>
+
+    <div class="row">
+      <button id="minusDiamond">−</button>
+      <span id="diamondStatus" class="pill">Diamond: 0 / 10</span>
+      <button id="plusDiamond">+</button>
+    </div>
   </div>
 
   <canvas id="c"></canvas>
@@ -90,6 +97,10 @@
     const plusSquareBtn  = document.getElementById("plusSquare");
     const squareStatusEl = document.getElementById("squareStatus");
 
+    const minusDiamondBtn = document.getElementById("minusDiamond");
+    const plusDiamondBtn  = document.getElementById("plusDiamond");
+    const diamondStatusEl = document.getElementById("diamondStatus");
+
     let mirroringOn = true;
 
     // Layer 1 (inner circle only; outer circle constant)
@@ -97,6 +108,9 @@
 
     // Layer 2
     let squareLevel = 0; // 0..10
+
+    // Layer 3
+    let diamondLevel = 0; // 0..10
 
     const mirrors = [
       [ 1,  1],
@@ -126,6 +140,11 @@
 
     function updateSquareUI() {
       squareStatusEl.textContent = `Square: ${squareLevel} / 10`;
+      draw();
+    }
+
+    function updateDiamondUI() {
+      diamondStatusEl.textContent = `Diamond: ${diamondLevel} / 10`;
       draw();
     }
 
@@ -268,6 +287,84 @@
     }
 
     // =========================
+    // LAYER 3 (UNDER LAYER 2)
+    // Quarter of a diamond (top-right only); mirroring builds the full diamond
+    // Increments 0..10:
+    //   0 = nothing
+    //   1 = straight diagonal (solid)
+    //   2..11 (old scale) are now shown as 1..10
+    // =========================
+    function drawLayer3(midX, midY) {
+      if (diamondLevel === 0) return;
+
+      // Size tied to Layer 2 square so it sits under it
+      const baseR  = Math.min(canvas.width, canvas.height) * 0.15;
+      const outerR = baseR + 80;
+      const half   = outerR;
+
+      // Diamond radius in local coords (top vertex to center)
+      const d = half * 0.9;
+
+      const lw = 3;
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = lw;
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
+
+      const segments = 10;
+
+      // Order to "turn" segments: 1st, 10th, 2nd, 9th, ... , 5th, 6th
+      const turnOrder = [1, 10, 2, 9, 3, 8, 4, 7, 5, 6];
+
+      const turned = new Set();
+      if (diamondLevel >= 1) {
+        const turnCount = Math.min(segments, diamondLevel);
+        for (let i = 0; i < turnCount; i++) turned.add(turnOrder[i]);
+      }
+
+      // Points along the diagonal from Top(0,-d) to Right(d,0)
+      const pts = [];
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        pts.push({ x: d * t, y: -d + d * t });
+      }
+
+      const transforms = mirroringOn ? mirrors : [[1, 1]];
+
+      for (const [sx, sy] of transforms) {
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.scale(sx, sy);
+
+        // Clip to top-right quadrant
+        ctx.beginPath();
+        ctx.rect(0, -half, half, half);
+        ctx.clip();
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+
+        for (let i = 0; i < segments; i++) {
+          const a = pts[i];
+          const b = pts[i + 1];
+          const segIndex = i + 1; // 1..10
+
+          if (!turned.has(segIndex)) {
+            // straight diagonal segment
+            ctx.lineTo(b.x, b.y);
+          } else {
+            // 90° corner inside the segment: horizontal then vertical
+            ctx.lineTo(b.x, a.y);
+            ctx.lineTo(b.x, b.y);
+          }
+        }
+
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // =========================
     // LAYER 2 (UNDER LAYER 1)
     // =========================
     function drawLayer2(midX, midY) {
@@ -342,6 +439,7 @@
       const midX = canvas.width / 2;
       const midY = canvas.height / 2;
 
+      drawLayer3(midX, midY);
       drawLayer2(midX, midY);
       drawQuadrantLines(midX, midY);
       drawLayer1(midX, midY);
@@ -373,10 +471,20 @@
       updateSquareUI();
     });
 
+    minusDiamondBtn.addEventListener("click", () => {
+      diamondLevel = Math.max(0, diamondLevel - 1);
+      updateDiamondUI();
+    });
+    plusDiamondBtn.addEventListener("click", () => {
+      diamondLevel = Math.min(10, diamondLevel + 1);
+      updateDiamondUI();
+    });
+
     window.addEventListener("resize", resize);
     resize();
     updateRomanUI();
     updateSquareUI();
+    updateDiamondUI();
   </script>
 </body>
 </html>
