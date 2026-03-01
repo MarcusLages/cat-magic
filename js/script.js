@@ -1,7 +1,7 @@
 class Target {
     constructor(container) {
         this.target = document.createElement("div");
-        this.target.classList.add("target");
+        this.target.classList.add("targets");
         this.target.style.position = "absolute";
         this.target.style.width = "50px";
         this.target.style.height = "50px";
@@ -69,12 +69,18 @@ function finish_shooting(container, bullet) {
 }
 
 
-let container = document.getElementById("container");
-let bullet = document.getElementById("bullet");
-let startBtn = document.getElementById("startBtn");
-let runBtn = document.getElementById("runBtn");
+const container = document.getElementById("container");
+const bullet = document.getElementById("bullet");
+const startBtn = document.getElementById("startBtn");
+const runBtn = document.getElementById("runBtn");
 
 startBtn.addEventListener("click", (event) => {
+    const targets = document.querySelectorAll(".targets");
+    
+    targets.forEach(target => {
+        target.remove();
+    });
+
     for (let i=0; i < 5; i++) {
         const target = new Target(container);
         target.placeTargetRandomly();
