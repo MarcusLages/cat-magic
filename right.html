@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Layers: Mirrored Quarter Square Under</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    canvas { display: block; background: #111; }
+
+    #uiLeft, #uiRight {
+      position: fixed;
+      top: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 10;
+      font: 14px system-ui;
+      color: white;
+    }
+    #uiLeft { left: 12px; }
+    #uiRight { right: 12px; }
+
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #444;
+      background: #1b1b1b;
+      color: white;
+      cursor: pointer;
+      min-width: 44px;
+    }
+    button:hover { background: #242424; }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #444;
+      background: #1b1b1b;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Left: mirroring toggle -->
+  <div id="uiLeft">
+    <button id="toggleMirror">Mirroring: ON</button>
+    <span id="mirrorStatus" class="pill">Drawing 4 quadrants</span>
+  </div>
+
+  <!-- Right: roman numeral increment/decrement -->
+  <div id="uiRight">
+    <button id="minus">−</button>
+    <span id="romanStatus" class="pill">Value: 6 (VI)</span>
+    <button id="plus">+</button>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+
+    const toggleMirrorBtn = document.getElementById("toggleMirror");
+    const mirrorStatusEl = document.getElementById("mirrorStatus");
+
+    const minusBtn = document.getElementById("minus");
+    const plusBtn = document.getElementById("plus");
+    const romanStatusEl = document.getElementById("romanStatus");
+
+    let mirroringOn = true;
+    let value = 6;
+
+    const mirrors = [
+      [ 1,  1],
+      [-1,  1],
+      [ 1, -1],
+      [-1, -1],
+    ];
+
+    function toRoman(n) {
+      if (!Number.isFinite(n) || n <= 0 || n >= 4000) return "";
+      const map = [
+        [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+        [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+        [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+      ];
+      let out = "";
+      for (const [num, sym] of map) while (n >= num) { out += sym; n -= num; }
+      return out;
+    }
+
+    function updateRomanUI() {
+      const roman = toRoman(value);
+      romanStatusEl.textContent = `Value: ${value} (${roman || "—"})`;
+      draw();
+    }
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      draw();
+    }
+
+    function drawQuadrantLines(midX, midY) {
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(midX, 0); ctx.lineTo(midX, canvas.height);
+      ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY);
+      ctx.stroke();
+    }
+
+    function strokeArc(r, lineWidth, color, start, end) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(0, 0, r, start, end);
+      ctx.stroke();
+    }
+
+    function eraseCircle(x, y, radius) {
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHollowMarker(x, y, outerRadius, strokeWidth, color) {
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = strokeWidth;
+      ctx.beginPath();
+      ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawText(text, x, y, sizePx, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `${sizePx}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    // =========================
+    // LAYER 2 (UNDER LAYER 1)
+    // A quarter-square "tile" drawn in local TOP-RIGHT,
+    // then mirrored into other quadrants when mirroring is ON.
+    // =========================
+    function drawLayer2(midX, midY) {
+      const baseR  = Math.min(canvas.width, canvas.height) * 0.15;
+      const outerR = baseR + 80;
+
+      // Define the square size (based on outer ring diameter)
+      const fullSquareSize = outerR * 2;
+      const half = fullSquareSize / 2;
+
+      const transforms = mirroringOn ? mirrors : [[1, 1]];
+
+      for (const [sx, sy] of transforms) {
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.scale(sx, sy);
+
+        // Clip to LOCAL top-right quadrant area: x >= 0 and y <= 0
+        ctx.beginPath();
+        ctx.rect(0, -half, half, half);
+        ctx.clip();
+
+        // Draw ONLY the top-right quarter square (explicit)
+        ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        ctx.fillRect(0, -half, half, half);
+
+        ctx.strokeStyle = "rgba(255, 0, 0, 0.35)";
+        ctx.lineWidth = 10;
+        ctx.strokeRect(0, -half, half, half);
+
+        ctx.restore();
+      }
+    }
+
+    // =========================
+    // LAYER 1 (ON TOP)
+    // Your existing arcs + marker + roman numeral + labels
+    // =========================
+    function drawLayer1(midX, midY) {
+      const baseR  = Math.min(canvas.width, canvas.height) * 0.35;
+      const outerR = baseR + 80;
+
+      const start = -Math.PI / 2;
+      const end   = 0;
+
+      const midAngle = (start + end) / 2; // -45°
+      const ringWidth = 6;
+
+      const markerOuterR = 40;
+      const markerStroke = 6;
+
+      const localX = canvas.width * 0.25;
+      const localY = -canvas.height * 0.25;
+
+      const roman = toRoman(value) || "—";
+      const transforms = mirroringOn ? mirrors : [[1, 1]];
+
+      for (const [sx, sy] of transforms) {
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.scale(sx, sy);
+
+        // arcs (both red, width 6)
+        strokeArc(baseR,  ringWidth, "red", start, end);
+        strokeArc(outerR, ringWidth, "red", start, end);
+
+        // marker position halfway along inner arc
+        const markerX = Math.cos(midAngle) * baseR;
+        const markerY = Math.sin(midAngle) * baseR;
+
+        // clear interior behind marker + text
+        eraseCircle(markerX, markerY, markerOuterR + 3);
+
+        // hollow marker ring
+        drawHollowMarker(markerX, markerY, markerOuterR, markerStroke, "red");
+
+        // roman numeral inside marker
+        drawText(roman, markerX, markerY, 30, "white");
+
+        // quadrant label
+        drawText("1", localX, localY, 64, "white");
+
+        ctx.restore();
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const midX = canvas.width / 2;
+      const midY = canvas.height / 2;
+
+      // Draw order (bottom -> top)
+      drawLayer2(midX, midY);       // Layer 2 under
+      drawQuadrantLines(midX, midY);
+      drawLayer1(midX, midY);       // Layer 1 on top
+    }
+
+    // Mirroring toggle
+    toggleMirrorBtn.addEventListener("click", () => {
+      mirroringOn = !mirroringOn;
+      toggleMirrorBtn.textContent = `Mirroring: ${mirroringOn ? "ON" : "OFF"}`;
+      mirrorStatusEl.textContent = mirroringOn ? "Drawing 4 quadrants" : "Drawing top-right only";
+      draw();
+    });
+
+    // Plus / minus controls (clamp 1..3999)
+    minusBtn.addEventListener("click", () => {
+      value = Math.max(1, value - 1);
+      updateRomanUI();
+    });
+    plusBtn.addEventListener("click", () => {
+      value = Math.min(3999, value + 1);
+      updateRomanUI();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "+" || e.key === "=") {
+        value = Math.min(3999, value + 1);
+        updateRomanUI();
+      } else if (e.key === "-" || e.key === "_") {
+        value = Math.max(1, value - 1);
+        updateRomanUI();
+      }
+    });
+
+    window.addEventListener("resize", resize);
+    resize();
+    updateRomanUI();
+  </script>
+</body>
+</html>
