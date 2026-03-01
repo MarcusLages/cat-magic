@@ -38,12 +38,6 @@ function move(element, x, y) {
     element.style.top = (Number(verticleValue) + y) + "px";
 }
 
-function storeTargetVariables(tagetVars) {
-    const m = Math.random() * (10);
-    const b = Math.random() * (10);
-    tagetVars.push([m, b]);
-}
-
 function moveTargets(targets, x) {
     targets.forEach(targetObj => {
         move(targetObj.target, -x, 0);
@@ -95,7 +89,6 @@ const container = document.getElementById("container");
 const bullet = document.getElementById("bullet");
 const startBtn = document.getElementById("startBtn");
 const runBtn = document.getElementById("runBtn");
-const targetVars = [];
 let targets = [];
 const x = 0;
 
@@ -106,7 +99,6 @@ startBtn.addEventListener("click", (event) => {
     for (let i=0; i < 5; i++) {
         const target = new Target(container);
         target.placeTargetRandomly();
-        storeTargetVariables(targetVars);
         targets.push(target);
     }
 
