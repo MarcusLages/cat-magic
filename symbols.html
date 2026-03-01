@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
-    <head></head>
+    <head>
+        <link rel="stylesheet" href="./css/styles.css">
+    </head>
     <body>
-        <div id="symbols-grid">
-            <button id="square">square</button>
-            <button id="losangle">losangle</button>
-            <button id="circle">circle</button>
-            <button id="triangle">triangle</button>
-            <button id="clean">clean</button>
-            <button id="run">run</button>
+        <div id="symbols-page">
+            <div id="symbols-grid">
+                <button class="symbol-btn" id="square">square</button>
+                <button class="symbol-btn" id="losangle">losangle</button>
+                <button class="symbol-btn" id="circle">circle</button>
+                <button class="symbol-btn" id="triangle">triangle</button>
+            </div>
+            <button class="symbol-btn" id="clean">clean</button>
+            <button class="symbol-btn" id="run">run</button>
         </div>
         <script type="module" src="./src/symbols.js"></script>
         <script type="module" src="./src/buttons.js"></script>

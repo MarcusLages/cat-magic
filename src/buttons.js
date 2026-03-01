@@ -60,6 +60,7 @@ clean_btn.addEventListener("click", () => {
 
 run_btn.addEventListener("click", () => {
     for(let i = 0; i < 10; i++) {
-        console.log(symbols(i));
+        console.log(i, symbols(i));
     }
+    symbols.polys.length = 0;
 });
