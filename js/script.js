@@ -27,8 +27,8 @@ class Target {
     }
 }
 
-function get_y(m, e, b, x) {
-    return m * x**e + b
+function get_y(m, b, x) {
+    return m * x + b
 }
 
 function move(element, x, y) {
@@ -45,8 +45,10 @@ function shooting_bullet(container, bullet) {
     const startLeft = parseFloat(window.getComputedStyle(bullet).left);
     const startTop = parseFloat(window.getComputedStyle(bullet).top);
 
+    bullet.hidden = false;
+
     let IntervalId = setInterval(() => {
-        let y = get_y(2, 0, 0, x);
+        let y = get_y(2, 0, x);
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
@@ -72,6 +74,7 @@ function finish_shooting(container, bullet) {
 function move_bullet_to_start_point(bullet) {
     bullet.style.top = "200px";
     bullet.style.left = "0px";
+    bullet.hidden = true;
 }
 
 
