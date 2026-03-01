@@ -16,7 +16,6 @@ const SHAPES = Object.freeze({
 });
 
 const mirrors = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
-const MAX_LAYERS = 3;
 const MAX_INDEX = 10;
 
 const COLORS = Object.freeze({
@@ -45,10 +44,8 @@ function clamp(value, min, max) {
 }
 
 function toRoman(n) {
-  if (!Number.isFinite(n) || n <= 0 || n >= 4000) return "";
+  if (n <= 0 || n > 10) return "";
   const map = [
-    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
-    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
     [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
   ];
   let out = "";
@@ -84,10 +81,6 @@ function nextLayerNumber() {
   if (!layers[2].confirmed) return 2;
   if (!layers[3].confirmed) return 3;
   return null;
-}
-
-function layerKey(layer) {
-  return `${layer.shape}:${layer.polarity}`;
 }
 
 function applyGlow(color) {
