@@ -2,93 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CatMagic</title>
-    <link rel="stylesheet" href="src/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-<div id="background"></div>
-<canvas id="gameCanvas"></canvas>
-
-<script src="src/js/background.js"></script>
-<script src="src/js/catsorcerer.js"></script>
-<script src="src/js/skeleton.js"></script>
-
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    });
-
-    // --- Player ---
-    const bg = document.getElementById('background').getBoundingClientRect();
-    const player = {
-        x: bg.left,
-        y: bg.top + bg.height / 2 - 30,
-        width: 44,
-        height: 62
-    };
-
-    window.addEventListener('resize', () => {
-        const bg = document.getElementById('background').getBoundingClientRect();
-        player.y = bg.top + bg.height / 2 - 30;
-    });
-
-    let monsters = [];
-    let gameTime = 0;
-
-    // Spawn 4 skeletons on the far right, random y positions within the background div
-    function spawnSkeletons() {
-        const bg = document.getElementById('background').getBoundingClientRect();
-        const skeletonWidth = 36;
-        const skeletonHeight = 62;
-        const rx = bg.left + bg.width - skeletonWidth - 10;
-        for (let i = 0; i < 4; i++) {
-            const ry = bg.top + 10 + Math.random() * (bg.height - skeletonHeight - 20);
-            monsters.push(new Skeleton(rx, ry));
-        }
-    }
-    spawnSkeletons();
-
-
-
-    // --- Update ---
-    function update() {
-        gameTime++;
-
-        // Respawn monsters when all gone
-        monsters = monsters.filter(m => m.alive);
-        if (monsters.length === 0) {
-            spawnSkeletons();
-        }
-
-        // Update monsters
-        monsters.forEach(m => m.update());
-    }
-
-    // --- Draw ---
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        monsters.forEach(m => m.draw());
-        drawSorcerer(player.x, player.y);
-
-
-    }
-
-    function gameLoop() {
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-</script>
+    <button id="startBtn">Start Game</button>
+    <button id="runBtn">Run</button>
+    <h4 id="score">Score: 0</h4>
+    <div id="container">
+        <div id="bullet"></div>
+    </div>
+    <script type="module" src="js/script.js"></script>
 </body>
 </html>
