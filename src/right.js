@@ -20,8 +20,8 @@ const MAX_LAYERS = 3;
 const MAX_INDEX = 10;
 
 const COLORS = Object.freeze({
-  positive: "#ff2b2b",
-  negative: "#2b7bff",
+  positive: "#fc8181",
+  negative: "#4bebf4",
 });
 
 let viewW = appEl.clientWidth;
@@ -503,21 +503,24 @@ function resize() {
 
 function mapLayerToSymbolTerm(layer) {
   const sign = layer.polarity === "negative" ? -1 : 1;
-  if (layer.shape === SHAPES.SQUARE) return { a: sign * layer.index, e: 0 };
-  if (layer.shape === SHAPES.DIAMOND) return { a: sign * layer.index, e: 1 };
-  return { a: sign * layer.index, e: 2 };
+  switch(layer.shape) {
+    case SHAPES.CIRCLE:
+      return { a: sign, ae: 1, e: 0};
+    case SHAPES.SQUARE:
+      return { a: sign, ae: 1, e: 1};
+    case SHAPES.DIAMOND:
+      return { a: sign, ae: -1, e: 1};
+    default:
+      // error
+      return { a: 0, ae: 0, e: 0 };
+  }
 }
 
 function syncSymbolsModel() {
-  symbols.cleanup();
   for (const L of [1, 2, 3]) {
     if (!layers[L].confirmed) continue;
     const term = mapLayerToSymbolTerm(layers[L]);
-    if (typeof symbols.add_method === "function") {
-      symbols.add_method(term);
-    } else {
-      symbols.add_symbol(term);
-    }
+    symbols.add_symbol(term);
   }
 }
 
