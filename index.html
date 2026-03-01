@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Magic Ball Shooter</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<script src="background.js"></script>
+<script src="cat-sorcerer.js"></script>
+<script src="skeleton.js"></script>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.y = Math.min(player.y, canvas.height - player.height);
+    });
+
+    // --- Player ---
+    const player = {
+        x: 0,
+        y: canvas.height / 2 - 30,
+        width: 44,
+        height: 62
+    };
+
+    let monsters = [];
+    let gameTime = 0;
+
+    // Spawn 4 skeletons at random positions across the screen
+    function spawnSkeletons() {
+        for (let i = 0; i < 4; i++) {
+            const rx = 200 + Math.random() * (canvas.width - 300);
+            const ry = 30 + Math.random() * (canvas.height - 130);
+            monsters.push(new Skeleton(rx, ry));
+        }
+    }
+    spawnSkeletons();
+
+
+
+    // --- Update ---
+    function update() {
+        gameTime++;
+
+        // Respawn monsters when all gone
+        monsters = monsters.filter(m => m.alive);
+        if (monsters.length === 0) {
+            spawnSkeletons();
+        }
+
+        // Update monsters
+        monsters.forEach(m => m.update());
+    }
+
+    // --- Draw ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        monsters.forEach(m => m.draw());
+        drawSorcerer(player.x, player.y);
+
+
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+</body>
+</html>
