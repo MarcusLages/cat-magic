@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cat Magic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        /* Pixel star background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 60%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 10%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 75%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 35%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 85%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 50%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 15% 90%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 60% 45%, #fff 0%, transparent 100%),
+                radial-gradient(1px 1px at 35% 30%, #aaf 0%, transparent 100%),
+                radial-gradient(1px 1px at 75% 15%, #aaf 0%, transparent 100%),
+                radial-gradient(1px 1px at 5%  55%, #aaf 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .screen {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+        }
+
+        /* Pixel cat sprite */
+        .cat-sprite {
+            image-rendering: pixelated;
+            width: 96px;
+            height: 96px;
+            position: relative;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .cat-sprite canvas {
+            width: 96px;
+            height: 96px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-10px); }
+        }
+
+        .title-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-line1 {
+            font-size: clamp(28px, 5vw, 52px);
+            color: #ffd700;
+            text-shadow:
+                4px 4px 0 #b8860b,
+                8px 8px 0 #5a4000;
+            letter-spacing: 4px;
+        }
+
+        .title-line2 {
+            font-size: clamp(28px, 5vw, 52px);
+            color: #c084fc;
+            text-shadow:
+                4px 4px 0 #7e22ce,
+                8px 8px 0 #2e0a60;
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            font-size: clamp(8px, 1.5vw, 12px);
+            color: #60d0ff;
+            text-shadow: 2px 2px 0 #004466;
+            letter-spacing: 3px;
+            margin-top: 4px;
+        }
+
+        /* Pixel button */
+        .start-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 1.8vw, 16px);
+            color: #0a0a1a;
+            background: #ffd700;
+            border: none;
+            padding: 16px 40px;
+            cursor: pointer;
+            letter-spacing: 2px;
+
+            /* Pixel border effect */
+            box-shadow:
+                inset -4px -4px 0 #b8860b,
+                inset  4px  4px 0 #fff5aa,
+                4px 4px 0 #000;
+
+            image-rendering: pixelated;
+            transition: transform 0.05s, box-shadow 0.05s;
+        }
+
+        .start-btn:hover {
+            background: #ffe94d;
+            color: #2e0a60;
+        }
+
+        .start-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow:
+                inset -4px -4px 0 #b8860b,
+                inset  4px  4px 0 #fff5aa;
+        }
+
+        .blink {
+            animation: blink 1.2s step-start infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
+
+        .hint {
+            font-size: clamp(6px, 1vw, 9px);
+            color: #666;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+
+    <!-- Pixel cat drawn on canvas -->
+    <div class="cat-sprite">
+        <canvas id="catCanvas" width="48" height="48" style="width:96px;height:96px;"></canvas>
+    </div>
+
+    <div class="title-wrapper">
+        <div class="title-line1">CAT</div>
+        <div class="title-line2">MAGIC</div>
+        <div class="subtitle">~ a math learning adventure ~</div>
+    </div>
+
+    <button class="start-btn" onclick="window.location.href='index.html'">
+        ► START GAME
+    </button>
+
+    <div class="hint blink">press start to begin</div>
+
+</div>
+
+<script>
+    // Draw mini pixel cat on the canvas
+    const c = document.getElementById('catCanvas');
+    const x = c.getContext('2d');
+
+    function px(col, row, w, h, color) {
+        x.fillStyle = color;
+        x.fillRect(col * 3, row * 3, (w || 1) * 3, (h || 1) * 3);
+    }
+
+    // Hat
+    px(5, 0, 6, 1, '#6a2a9a');
+    px(4, 1, 8, 1, '#5a1a8a');
+    px(3, 2, 10, 1, '#5a1a8a');
+    px(3, 3, 10, 1, '#c8a000'); // band
+    // Ear
+    px(3, 1, 2, 2, '#cc7a30');
+    // Head
+    px(3, 4, 10, 6, '#d4892a');
+    // Eyes
+    px(4, 5, 2, 2, '#222');
+    px(10, 5, 2, 2, '#222');
+    px(4, 5, 2, 2, '#3aaa5a');
+    px(10, 5, 2, 2, '#3aaa5a');
+    px(5, 5, 1, 2, '#000');
+    px(11, 5, 1, 2, '#000');
+    // Nose
+    px(7, 7, 2, 1, '#c05050');
+    // Muzzle
+    px(5, 6, 6, 3, '#f0b870');
+    // Body/robe
+    px(4, 10, 8, 6, '#5a1a8a');
+    px(6, 10, 4, 6, '#c8a000');
+    // Star on robe
+    px(4, 12, 1, 1, '#ffd700');
+    px(3, 13, 3, 1, '#ffd700');
+    px(4, 11, 1, 3, '#ffd700');
+
+    // Crystal glow
+    x.fillStyle = '#60d0ff';
+    x.shadowBlur = 8;
+    x.shadowColor = '#00cfff';
+    px(14, 2, 2, 3, '#60d0ff');
+    x.shadowBlur = 0;
+</script>
+
+</body>
+</html>
