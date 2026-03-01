@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Magic Ball Shooter</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000;
-        }
-        canvas {
-            display: block;
-        }
-    </style>
+    <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
 
+<div id="background"></div>
+<div id="side-panel"></div>
 <canvas id="gameCanvas"></canvas>
 
-<script src="src/background.js"></script>
-<script src="src/catsorcerer.js"></script>
-<script src="src/skeleton.js"></script>
+<script src="src/js/background.js"></script>
+<script src="src/js/catsorcerer.js"></script>
+<script src="src/js/skeleton.js"></script>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
@@ -32,25 +25,33 @@
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        player.y = Math.min(player.y, canvas.height - player.height);
     });
 
     // --- Player ---
+    const bg = document.getElementById('background').getBoundingClientRect();
     const player = {
-        x: 0,
-        y: canvas.height / 2 - 30,
+        x: bg.left,
+        y: bg.top + bg.height / 2 - 30,
         width: 44,
         height: 62
     };
 
+    window.addEventListener('resize', () => {
+        const bg = document.getElementById('background').getBoundingClientRect();
+        player.y = bg.top + bg.height / 2 - 30;
+    });
+
     let monsters = [];
     let gameTime = 0;
 
-    // Spawn 4 skeletons at random positions across the screen
+    // Spawn 4 skeletons on the far right, random y positions within the background div
     function spawnSkeletons() {
+        const bg = document.getElementById('background').getBoundingClientRect();
+        const skeletonWidth = 36;
+        const skeletonHeight = 62;
+        const rx = bg.left + bg.width - skeletonWidth - 10;
         for (let i = 0; i < 4; i++) {
-            const rx = 200 + Math.random() * (canvas.width - 300);
-            const ry = 30 + Math.random() * (canvas.height - 130);
+            const ry = bg.top + 10 + Math.random() * (bg.height - skeletonHeight - 20);
             monsters.push(new Skeleton(rx, ry));
         }
     }
@@ -75,7 +76,6 @@
     // --- Draw ---
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
 
         monsters.forEach(m => m.draw());
         drawSorcerer(player.x, player.y);
