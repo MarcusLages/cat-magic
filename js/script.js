@@ -1,3 +1,5 @@
+import { symbols } from "./symbols.js";
+
 class Target {
     constructor(container) {
         this.target = document.createElement("div");
@@ -28,10 +30,6 @@ class Target {
     }
 }
 
-function getY(m, b, x) {
-    return m * x + b
-}
-
 function move(element, x, y) {
     let elStyle = window.getComputedStyle(element);
     let horizontalValue = elStyle.getPropertyValue("left").replace("px", "");
@@ -53,14 +51,14 @@ function shootingBullet(container, bullet, targets) {
     const startTop = parseFloat(window.getComputedStyle(bullet).top);
     const score = document.getElementById("score");
     const user = document.getElementById("user");
-    let y = getY(1, -2, 0);
+    let y = symbols(0);
 
     user.style.top = startTop - y + "px";
 
     bullet.hidden = false;
 
     let IntervalId = setInterval(() => {
-        y = getY(1, -2, x);
+        y = symbols(x);
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
@@ -120,7 +118,7 @@ function moveBulletToStartPoint(bullet) {
 const container = document.getElementById("container");
 const bullet = document.getElementById("bullet");
 const startBtn = document.getElementById("startBtn");
-const runBtn = document.getElementById("runBtn");
+const runBtn = document.getElementById("run");
 
 let targets = [];
 let numTargetRemoved = 0;
@@ -139,5 +137,9 @@ startBtn.addEventListener("click", (event) => {
 });
 
 runBtn.addEventListener("click", (event) => {
+    const symbolButtons = Array.from(document.querySelectorAll(".symbol-btn[data-shape]")).forEach(b => b.disabled = true );
+    moveBulletToStartPoint(bullet);
     shootingBullet(container, bullet, targets, numTargetRemoved, score, startBtn);
+    resetAll();
+    symbolButtons.forEach(b => b.disabled = false );
 });

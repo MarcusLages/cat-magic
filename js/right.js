@@ -7,7 +7,6 @@ const ctx = canvas.getContext("2d");
 
 const symbolButtons = Array.from(document.querySelectorAll(".symbol-btn[data-shape]"));
 const cleanBtn = document.getElementById("clean");
-const runBtn = document.getElementById("run");
 
 const SHAPES = Object.freeze({
   CIRCLE: "circle",
@@ -60,13 +59,6 @@ function toRoman(n) {
 
 function colorForPolarity(polarity) {
   return polarity === "negative" ? COLORS.negative : COLORS.positive;
-}
-
-function shapeLabel(shape) {
-  if (shape === SHAPES.CIRCLE) return "circle";
-  if (shape === SHAPES.SQUARE) return "square";
-  if (shape === SHAPES.DIAMOND) return "diamond";
-  return "—";
 }
 
 function activeLayerNumber() {
@@ -577,13 +569,6 @@ symbolButtons.forEach((btn) => {
 });
 
 cleanBtn.addEventListener("click", () => {
-  resetAll();
-});
-
-runBtn.addEventListener("click", () => {
-  for (let i = 0; i < 10; i++) {
-    console.log(i, symbols(i));
-  }
   resetAll();
 });
 
