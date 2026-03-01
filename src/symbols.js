@@ -19,6 +19,10 @@ function make_symbol() {
         }
     }
 
+    symbol_list.add_method = function(p) {
+        this.add_symbol(p);
+    }
+
     symbol_list.remove_symbol = function(a, e) {
         const idx = this.polys.findIndex(p => p.a === a && p.e === e);
         if (idx !== -1) this.polys.splice(idx, 1);
