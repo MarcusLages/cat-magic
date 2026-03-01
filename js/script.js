@@ -38,9 +38,9 @@ function move(element, x, y) {
     element.style.top = (Number(verticleValue) + y) + "px";
 }
 
-function moveTargets(targets, x) {
+function moveTargets(targets) {
     targets.forEach(targetObj => {
-        move(targetObj.target, -x, 0);
+        move(targetObj.target, -50, 0);
     });
 }
 
@@ -53,18 +53,43 @@ function shootingBullet(container, bullet, targets) {
     bullet.hidden = false;
 
     let IntervalId = setInterval(() => {
-        let y = getY(2, 0, x);
+        let y = getY(1, -2, x);
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
         x+=1;
-        
+
+        if(isTouching(bullet, targets)) {
+            numTargetRemoved++;
+            console.log(`Number of targets removed: ${numTargetRemoved}`)
+
+        }
+
         if(finishShooting(container, bullet)) {
             moveBulletToStartPoint(bullet);
-            moveTargets(targets, x);
+            moveTargets(targets);
             clearInterval(IntervalId);
         }
     }, 5);
+}
+
+function isTouching(bullet, targets) {
+    const bulletRect = bullet.getBoundingClientRect();
+
+    for (let i = targets.length - 1; i>=0; i--) {
+        const targetObj = targets[i];
+        const targetRect = targetObj.target.getBoundingClientRect();
+        const horizontalOverlap = bulletRect.right > targetRect.left && bulletRect.left < targetRect.right;
+        const verticalOverlap = bulletRect.bottom > targetRect.top && bulletRect.top < targetRect.bottom;
+
+        if (horizontalOverlap && verticalOverlap) {
+            targetObj.target.remove();
+            targets.splice(i, 1);
+            return true;
+        }
+    };
+
+    return false;
 }
 
 function finishShooting(container, bullet) {
@@ -91,9 +116,11 @@ const startBtn = document.getElementById("startBtn");
 const runBtn = document.getElementById("runBtn");
 let targets = [];
 const x = 0;
+let numTargetRemoved = 0;
 
 startBtn.addEventListener("click", (event) => {
     targets.length = 0;
+    numTargetRemoved = 0;
     container.querySelectorAll(".targets").forEach(t => t.remove());
 
     for (let i=0; i < 5; i++) {
@@ -105,6 +132,5 @@ startBtn.addEventListener("click", (event) => {
 });
 
 runBtn.addEventListener("click", (event) => {
-    shootingBullet(container, bullet, targets);
+    shootingBullet(container, bullet, targets, numTargetRemoved);
 });
-
