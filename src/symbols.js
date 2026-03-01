@@ -2,12 +2,16 @@ function make_symbol() {
     let polys = [];
 
     let symbol_list = function(x) {
-        let y = 0;
+        let y_obj = { a: 0, e: 0 };
         polys.forEach(p => {
-            console.log(`${y} += ${p.a}*${x}^${p.e}`);
-            console.log(`${y} += ${p.a * Math.pow(x, p.e)}`);
-            y += p.a * Math.pow(x, p.e);
+            y_obj.a += p.a;
+            y_obj.e += p.e;
         });
+        if(y_obj.e > 1) y_obj.e = 1;
+        else if(y_obj < -1) y_obj.e = -1;
+
+        console.log(`y = ${y_obj.a}*${x}^${y_obj.e} = ${y_obj.a * Math.pow(x, y_obj.e)}`);
+        const y = y_obj.a * Math.pow(x, y_obj.e);
         return y;
     }
     symbol_list.polys = polys;
