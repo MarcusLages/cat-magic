@@ -11,19 +11,19 @@ class Target {
     }
 
     placeTargetRandomly() {
-        const containerWidth = this.container.offsetWidth;
-        const containerHeight = this.container.offsetHeight;
+        const containerWidth = this.container.clientWidth;
+        const containerHeight = this.container.clientWidth;
+
         const targetWidth = this.target.offsetWidth;
         const targetHeight = this.target.offsetHeight;
 
-        const maxLeft = containerWidth - targetWidth;
-        const maxTop = containerHeight - targetHeight;
-
-        const randomLeft = Math.floor(Math.random() * (maxLeft + 1));
-        const randomTop = Math.floor(Math.random() * (maxTop + 1));
+        const randomLeft = Math.random() * (containerWidth - targetWidth);
+        const randomTop = Math.random() * (containerHeight - targetHeight);
 
         this.target.style.left = `${randomLeft}px`;
         this.target.style.top = `${randomTop}px`;
+        this.m = Math.random() * 4 - 2;
+        this.b = Math.random() * 100;
     }
 }
 
@@ -39,7 +39,25 @@ function move(element, x, y) {
     element.style.top = (Number(verticleValue) + y) + "px";
 }
 
-function shooting_bullet(container, bullet) {
+function store_target_variables(tagetVars) {
+    const m = Math.random() * (10);
+    const b = Math.random() * (10);
+    tagetVars.push([m, b]);
+}
+
+function move_targets(targets, x) {
+    console.log(targets);
+
+    targets.forEach(targetObj => {
+        const m = targetObj.m;
+        const b = targetObj.b;
+
+        const y = get_y(m, b, x);
+        move(targetObj.target, x, y);
+    });
+}
+
+function shooting_bullet(container, bullet, targets) {
     let x = 0;
 
     const startLeft = parseFloat(window.getComputedStyle(bullet).left);
@@ -52,13 +70,14 @@ function shooting_bullet(container, bullet) {
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
-        x+=5;
+        x+=1;
         
         if(finish_shooting(container, bullet)) {
             move_bullet_to_start_point(bullet);
+            move_targets(targets, x);
             clearInterval(IntervalId);
         }
-    }, 20);
+    }, 5);
 }
 
 function finish_shooting(container, bullet) {
@@ -83,21 +102,24 @@ const container = document.getElementById("container");
 const bullet = document.getElementById("bullet");
 const startBtn = document.getElementById("startBtn");
 const runBtn = document.getElementById("runBtn");
+const targetVars = [];
+let targets = [];
+const x = 0;
 
 startBtn.addEventListener("click", (event) => {
-    const targets = document.querySelectorAll(".targets");
-
-    targets.forEach(target => {
-        target.remove();
-    });
+    targets.length = 0;
+    container.querySelectorAll(".targets").forEach(t => t.remove());
 
     for (let i=0; i < 5; i++) {
         const target = new Target(container);
         target.placeTargetRandomly();
+        store_target_variables(targetVars);
+        targets.push(target);
     }
+
 });
 
 runBtn.addEventListener("click", (event) => {
-    shooting_bullet(container, bullet);
+    shooting_bullet(container, bullet, targets);
 });
 
