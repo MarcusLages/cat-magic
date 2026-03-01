@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Cat Magic</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap');
 
         * {
             margin: 0;
@@ -13,13 +13,14 @@
         }
 
         body {
-            background-color: #0a0a1a;
+            background: #001b20;
+            color: #e0f8ff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Pixelify Sans', system-ui, sans-serif;
         }
 
         /* Pixel star background */
@@ -28,18 +29,18 @@
             position: fixed;
             inset: 0;
             background-image:
-                radial-gradient(1px 1px at 10% 20%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 25% 60%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 40% 10%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 55% 75%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 70% 35%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 80% 85%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 90% 50%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 15% 90%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 60% 45%, #fff 0%, transparent 100%),
-                radial-gradient(1px 1px at 35% 30%, #aaf 0%, transparent 100%),
-                radial-gradient(1px 1px at 75% 15%, #aaf 0%, transparent 100%),
-                radial-gradient(1px 1px at 5%  55%, #aaf 0%, transparent 100%);
+                radial-gradient(1px 1px at 10% 20%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 60%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 10%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 75%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 35%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 85%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 50%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 15% 90%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 60% 45%, #e0f8ff 0%, transparent 100%),
+                radial-gradient(1px 1px at 35% 30%, #4dd8e0 0%, transparent 100%),
+                radial-gradient(1px 1px at 75% 15%, #4dd8e0 0%, transparent 100%),
+                radial-gradient(1px 1px at 5%  55%, #4dd8e0 0%, transparent 100%);
             pointer-events: none;
             z-index: 0;
         }
@@ -81,61 +82,58 @@
 
         .title-line1 {
             font-size: clamp(28px, 5vw, 52px);
-            color: #ffd700;
+            color: #e0f8ff;
             text-shadow:
-                4px 4px 0 #b8860b,
-                8px 8px 0 #5a4000;
+                4px 4px 0 #335560,
+                8px 8px 0 #001b20;
             letter-spacing: 4px;
         }
 
         .title-line2 {
             font-size: clamp(28px, 5vw, 52px);
-            color: #c084fc;
+            color: #4dd8e0;
             text-shadow:
-                4px 4px 0 #7e22ce,
-                8px 8px 0 #2e0a60;
+                4px 4px 0 #002a30,
+                8px 8px 0 #001b20;
             letter-spacing: 4px;
         }
 
         .subtitle {
-            font-size: clamp(8px, 1.5vw, 12px);
-            color: #60d0ff;
-            text-shadow: 2px 2px 0 #004466;
+            font-size: clamp(8px, 1.5vw, 14px);
+            color: #335560;
             letter-spacing: 3px;
             margin-top: 4px;
         }
 
         /* Pixel button */
         .start-btn {
-            font-family: 'Press Start 2P', monospace;
-            font-size: clamp(10px, 1.8vw, 16px);
-            color: #0a0a1a;
-            background: #ffd700;
-            border: none;
-            padding: 16px 40px;
+            font-family: 'Pixelify Sans', system-ui, sans-serif;
+            padding: 0.5rem 0.75rem;
+            min-width: 7rem;
             cursor: pointer;
-            letter-spacing: 2px;
-
-            /* Pixel border effect */
-            box-shadow:
-                inset -4px -4px 0 #b8860b,
-                inset  4px  4px 0 #fff5aa,
-                4px 4px 0 #000;
-
+            background: rgba(0, 0, 0, 0.7);
+            color: inherit;
+            font-size: 14px;
+            letter-spacing: 1px;
             image-rendering: pixelated;
-            transition: transform 0.05s, box-shadow 0.05s;
+            border-width: 8px;
+            border-style: solid;
+            border-image-source: url("img/border.png");
+            border-image-slice: 8;
+            border-image-repeat: repeat;
+            transition: transform 60ms ease-out, box-shadow 60ms ease-out, background-color 60ms ease-out;
+            box-shadow: 0 3px 0 #002a30;
+            text-transform: lowercase;
         }
 
         .start-btn:hover {
-            background: #ffe94d;
-            color: #2e0a60;
+            background: rgba(0, 40, 60, 0.9);
         }
 
         .start-btn:active {
-            transform: translate(4px, 4px);
-            box-shadow:
-                inset -4px -4px 0 #b8860b,
-                inset  4px  4px 0 #fff5aa;
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #00141a;
+            background: rgba(0, 20, 30, 0.9);
         }
 
         .blink {
@@ -148,8 +146,8 @@
         }
 
         .hint {
-            font-size: clamp(6px, 1vw, 9px);
-            color: #666;
+            font-size: clamp(8px, 1vw, 12px);
+            color: #335560;
             letter-spacing: 2px;
         }
     </style>
