@@ -1,56 +1,136 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Layers: L-Border Square + Inner Circle Toggle</title>
+  <title>3 Layers - Pick Shape + Index, Confirm per Layer</title>
   <style>
     html, body { height: 100%; margin: 0; }
     canvas { display: block; background: #111; }
 
+    :root {
+      --bg: #111;
+      --panel: #1b1b1b;
+      --panel2: #161616;
+      --border: #444;
+      --text: #fff;
+    }
+
     #uiLeft, #uiRight {
       position: fixed;
       top: 12px;
+      z-index: 10;
+      font: 14px system-ui;
+      color: var(--text);
       display: flex;
       gap: 10px;
       align-items: center;
-      z-index: 10;
-      font: 14px system-ui;
-      color: white;
     }
+
     #uiLeft { left: 12px; }
+
     #uiRight {
       right: 12px;
       flex-direction: column;
       align-items: stretch;
       gap: 10px;
+      min-width: 340px;
     }
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: flex-end;
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      user-select: none;
+      white-space: nowrap;
     }
 
     button {
       padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid #444;
-      background: #1b1b1b;
-      color: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
       cursor: pointer;
       min-width: 44px;
     }
     button:hover { background: #242424; }
 
-    .pill {
-      padding: 6px 10px;
+    .btnSmall { padding: 8px 10px; border-radius: 10px; min-width: 0; }
+    .btnWide { flex: 1; }
+
+    .segmented {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .segmented button {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: #181818;
+    }
+    .segmented button.active {
+      background: #2a2a2a;
+      border-color: #777;
+    }
+
+    .statusLine {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      opacity: 0.85;
+      font-size: 12px;
+      line-height: 1.25;
+      margin-top: 6px;
+    }
+
+    .layerCard {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #151515;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .layerCard.active {
+      border-color: #888;
+      background: #181818;
+    }
+    .layerTitle {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .layerTitle strong { font-size: 14px; }
+    .layerTitle span { font-size: 12px; opacity: 0.9; }
+
+    .confirmRow { display: flex; gap: 10px; align-items: center; }
+
+    .lockBadge {
+      font-size: 12px;
+      padding: 4px 8px;
       border-radius: 999px;
-      border: 1px solid #444;
-      background: #1b1b1b;
-      user-select: none;
-      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: #101010;
+      opacity: 0.95;
     }
   </style>
 </head>
@@ -61,63 +141,165 @@
   </div>
 
   <div id="uiRight">
-    <div class="row">
-      <button id="minusRoman">−</button>
-      <span id="romanStatus" class="pill">Inner: 6 (VI)</span>
-      <button id="plusRoman">+</button>
+    <div class="panel">
+      <div class="statusLine">
+        <span class="pill" id="stepStatus">Step: Pick Layer 1 → Confirm</span>
+        <button class="btnSmall" id="resetAll">Reset</button>
+      </div>
+      <div class="hint">
+        1) Click a layer card (Layer 1/2/3).<br/>
+        2) Choose shape + adjust its index.<br/>
+        3) Press <b>Confirm</b> for that layer. You can reuse shapes across layers.
+      </div>
     </div>
 
-    <div class="row">
-      <button id="minusSquare">−</button>
-      <span id="squareStatus" class="pill">Square: 0 / 10</span>
-      <button id="plusSquare">+</button>
+    <div class="panel" id="layersPanel">
+      <div class="layerCard active" data-layer="1" id="layerCard1">
+        <div class="layerTitle">
+          <strong>Layer 1 (Outer)</strong>
+          <span id="layerSummary1" class="pill">Not set</span>
+        </div>
+        <div class="confirmRow">
+          <button class="btnWide" id="confirm1">Confirm Layer 1</button>
+          <span id="lock1" class="lockBadge">Unlocked</span>
+        </div>
+      </div>
+
+      <div class="layerCard" data-layer="2" id="layerCard2">
+        <div class="layerTitle">
+          <strong>Layer 2 (Middle)</strong>
+          <span id="layerSummary2" class="pill">Not set</span>
+        </div>
+        <div class="confirmRow">
+          <button class="btnWide" id="confirm2" disabled>Confirm Layer 2</button>
+          <span id="lock2" class="lockBadge">Locked</span>
+        </div>
+      </div>
+
+      <div class="layerCard" data-layer="3" id="layerCard3">
+        <div class="layerTitle">
+          <strong>Layer 3 (Inner)</strong>
+          <span id="layerSummary3" class="pill">Not set</span>
+        </div>
+        <div class="confirmRow">
+          <button class="btnWide" id="confirm3" disabled>Confirm Layer 3</button>
+          <span id="lock3" class="lockBadge">Locked</span>
+        </div>
+      </div>
     </div>
 
-    <div class="row">
-      <button id="minusDiamond">−</button>
-      <span id="diamondStatus" class="pill">Diamond: 0 / 10</span>
-      <button id="plusDiamond">+</button>
+    <div class="panel">
+      <div class="row" style="margin-bottom:10px;">
+        <span class="pill" id="editStatus">Editing: Layer 1</span>
+        <span class="pill" id="previewStatus">Preview: Circle (index 6)</span>
+      </div>
+
+      <div class="row" style="margin-bottom:10px;">
+        <div class="segmented" style="width:100%;">
+          <button id="shapeCircle" class="active" type="button">Circle</button>
+          <button id="shapeSquare" type="button">Square</button>
+          <button id="shapeDiamond" type="button">Diamond</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="minusIdx">−</button>
+        <span id="idxStatus" class="pill">Index: 6</span>
+        <button id="plusIdx">+</button>
+      </div>
+
+      <div class="hint" id="idxHint">
+        Circle index: 0..3999 (shown as Roman). Square/Diamond index: 0..10.
+      </div>
     </div>
   </div>
 
   <canvas id="c"></canvas>
 
   <script>
+    // ------------------------------
+    // Canvas / context
+    // ------------------------------
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d");
 
+    // ------------------------------
+    // UI elements
+    // ------------------------------
     const toggleMirrorBtn = document.getElementById("toggleMirror");
-    const mirrorStatusEl = document.getElementById("mirrorStatus");
+    const mirrorStatusEl  = document.getElementById("mirrorStatus");
 
-    const minusRomanBtn = document.getElementById("minusRoman");
-    const plusRomanBtn  = document.getElementById("plusRoman");
-    const romanStatusEl = document.getElementById("romanStatus");
+    const stepStatusEl    = document.getElementById("stepStatus");
+    const resetAllBtn     = document.getElementById("resetAll");
 
-    const minusSquareBtn = document.getElementById("minusSquare");
-    const plusSquareBtn  = document.getElementById("plusSquare");
-    const squareStatusEl = document.getElementById("squareStatus");
+    const layerCard1      = document.getElementById("layerCard1");
+    const layerCard2      = document.getElementById("layerCard2");
+    const layerCard3      = document.getElementById("layerCard3");
 
-    const minusDiamondBtn = document.getElementById("minusDiamond");
-    const plusDiamondBtn  = document.getElementById("plusDiamond");
-    const diamondStatusEl = document.getElementById("diamondStatus");
+    const layerSummary1   = document.getElementById("layerSummary1");
+    const layerSummary2   = document.getElementById("layerSummary2");
+    const layerSummary3   = document.getElementById("layerSummary3");
 
+    const confirm1Btn     = document.getElementById("confirm1");
+    const confirm2Btn     = document.getElementById("confirm2");
+    const confirm3Btn     = document.getElementById("confirm3");
+
+    const lock1El         = document.getElementById("lock1");
+    const lock2El         = document.getElementById("lock2");
+    const lock3El         = document.getElementById("lock3");
+
+    const editStatusEl    = document.getElementById("editStatus");
+    const previewStatusEl = document.getElementById("previewStatus");
+
+    const shapeCircleBtn  = document.getElementById("shapeCircle");
+    const shapeSquareBtn  = document.getElementById("shapeSquare");
+    const shapeDiamondBtn = document.getElementById("shapeDiamond");
+
+    const minusIdxBtn     = document.getElementById("minusIdx");
+    const plusIdxBtn      = document.getElementById("plusIdx");
+    const idxStatusEl     = document.getElementById("idxStatus");
+    const idxHintEl       = document.getElementById("idxHint");
+
+    // ------------------------------
+    // Mirroring
+    // ------------------------------
     let mirroringOn = true;
-
-    // Layer 1 (inner circle only; outer circle constant)
-    let value = 6; // allow 0+
-
-    // Layer 2
-    let squareLevel = 0; // 0..10
-
-    // Layer 3
-    let diamondLevel = 0; // 0..10
-
     const mirrors = [
       [ 1,  1],
       [-1,  1],
       [ 1, -1],
       [-1, -1],
     ];
+
+    // ------------------------------
+    // "Wizard" selection state
+    // ------------------------------
+    const SHAPES = Object.freeze({
+      CIRCLE: "circle",
+      SQUARE: "square",
+      DIAMOND: "diamond",
+    });
+
+    // What you're currently previewing/editing (before confirming)
+    let editingLayer = 1;
+    let previewShape = SHAPES.CIRCLE;
+    let previewIndex = 6;
+
+    // What has been confirmed for each layer
+    const layers = {
+      1: { shape: null, index: null, confirmed: false },
+      2: { shape: null, index: null, confirmed: false },
+      3: { shape: null, index: null, confirmed: false },
+    };
+
+    function shapeLabel(shape) {
+      if (shape === SHAPES.CIRCLE) return "Circle";
+      if (shape === SHAPES.SQUARE) return "Square";
+      if (shape === SHAPES.DIAMOND) return "Diamond";
+      return "—";
+    }
+
+    function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
     function toRoman(n) {
       if (!Number.isFinite(n) || n <= 0 || n >= 4000) return "";
@@ -131,29 +313,29 @@
       return out;
     }
 
-    function updateRomanUI() {
-      romanStatusEl.textContent = (value === 0)
-        ? "Inner: 0 (—)"
-        : `Inner: ${value} (${toRoman(value)})`;
-      draw();
+    // ------------------------------
+    // Layer 2 rules (same idea as your current file)
+    // ------------------------------
+    // 0: empty
+    // 1-5: 1..5 border lines
+    // 6-9: (level-5) border lines + V
+    // 10: 1 border line + X
+    function borderCountForLevel(level) {
+      if (level <= 0) return 0;
+      if (level >= 1 && level <= 5) return level;
+      if (level >= 6 && level <= 9) return level - 5;
+      if (level === 10) return 1;
+      return 0;
+    }
+    function markForLevel(level) {
+      if (level >= 6 && level <= 9) return "V";
+      if (level === 10) return "X";
+      return null;
     }
 
-    function updateSquareUI() {
-      squareStatusEl.textContent = `Square: ${squareLevel} / 10`;
-      draw();
-    }
-
-    function updateDiamondUI() {
-      diamondStatusEl.textContent = `Diamond: ${diamondLevel} / 10`;
-      draw();
-    }
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      draw();
-    }
-
+    // ------------------------------
+    // Drawing helpers
+    // ------------------------------
     function drawQuadrantLines(midX, midY) {
       ctx.strokeStyle = "white";
       ctx.lineWidth = 2;
@@ -202,28 +384,9 @@
       ctx.restore();
     }
 
-    // ---------- LAYER 2 rules ----------
-    // 0: empty
-    // 1-5: 1..5 border lines
-    // 6-9: (level-5) border lines + V
-    // 10: 1 border line + X
-    function borderCountForLevel(level) {
-      if (level <= 0) return 0;
-      if (level >= 1 && level <= 5) return level;
-      if (level >= 6 && level <= 9) return level - 5;
-      if (level === 10) return 1;
-      return 0;
-    }
-    function markForLevel(level) {
-      if (level >= 6 && level <= 9) return "V";
-      if (level === 10) return "X";
-      return null;
-    }
-
     // Draw ONLY top+right borders (L-shape), with N parallel lines
     function drawLBorder(half, count) {
       if (count <= 0) return;
-
       const spacing = 8;
       const lw = 3;
 
@@ -262,13 +425,10 @@
       ctx.lineWidth = lw;
       ctx.lineCap = "butt";
 
-      // More towards center (bigger pad)
-      const pad = 52; // was 40
+      const pad = 52;
       const cx = half - pad;
       const cy = -half + pad;
-
-      // Smaller mark size
-      const s = 12; // was 16
+      const s = 12;
 
       if (type === "V") {
         ctx.beginPath();
@@ -286,48 +446,22 @@
       }
     }
 
-    // =========================
-    // LAYER 3 (UNDER LAYER 2)
-    // Quarter of a diamond (top-right only); mirroring builds the full diamond
-    // Increments 0..10:
-    //   0 = nothing
-    //   1 = straight diagonal (solid)
-    //   2..11 (old scale) are now shown as 1..10
-    // =========================
-    function drawLayer3(midX, midY) {
-      if (diamondLevel === 0) return;
+    // ------------------------------
+    // Shape renderers (generic)
+    // Each takes a "size" so layer 1 is bigger than layer 2, etc.
+    // ------------------------------
+    function renderCircleLayer(midX, midY, sizeOuterR, idx) {
+      // Quarter arc (mirrored across quadrants if mirroringOn)
+      const innerR = sizeOuterR - 80;
+      const outerR = sizeOuterR;
 
-      // Size tied to Layer 2 square so it sits under it
-      const baseR  = Math.min(canvas.width, canvas.height) * 0.15;
-      const outerR = baseR + 80;
-      const half   = outerR;
+      const start = -Math.PI / 2;
+      const end   = 0;
+      const midAngle = (start + end) / 2;
 
-      // Diamond radius in local coords (top vertex to center)
-      const d = half * 0.9;
-
-      const lw = 3;
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = lw;
-      ctx.lineCap = "butt";
-      ctx.lineJoin = "miter";
-
-      const segments = 10;
-
-      // Order to "turn" segments: 1st, 10th, 2nd, 9th, ... , 5th, 6th
-      const turnOrder = [1, 10, 2, 9, 3, 8, 4, 7, 5, 6];
-
-      const turned = new Set();
-      if (diamondLevel >= 1) {
-        const turnCount = Math.min(segments, diamondLevel);
-        for (let i = 0; i < turnCount; i++) turned.add(turnOrder[i]);
-      }
-
-      // Points along the diagonal from Top(0,-d) to Right(d,0)
-      const pts = [];
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        pts.push({ x: d * t, y: -d + d * t });
-      }
+      const ringWidth = 3;
+      const markerOuterR = Math.max(18, Math.round(sizeOuterR * 0.10));
+      const markerStroke = 3;
 
       const transforms = mirroringOn ? mirrors : [[1, 1]];
 
@@ -336,45 +470,32 @@
         ctx.translate(midX, midY);
         ctx.scale(sx, sy);
 
-        // Clip to top-right quadrant
-        ctx.beginPath();
-        ctx.rect(0, -half, half, half);
-        ctx.clip();
+        // outer ring always
+        strokeArc(outerR, ringWidth, "red", start, end);
 
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
+        // inner ring + marker only when idx > 0
+        if (idx > 0) {
+          strokeArc(innerR, ringWidth, "red", start, end);
 
-        for (let i = 0; i < segments; i++) {
-          const a = pts[i];
-          const b = pts[i + 1];
-          const segIndex = i + 1; // 1..10
+          const markerX = Math.cos(midAngle) * innerR;
+          const markerY = Math.sin(midAngle) * innerR;
 
-          if (!turned.has(segIndex)) {
-            // straight diagonal segment
-            ctx.lineTo(b.x, b.y);
-          } else {
-            // 90° corner inside the segment: horizontal then vertical
-            ctx.lineTo(b.x, a.y);
-            ctx.lineTo(b.x, b.y);
-          }
+          eraseCircle(markerX, markerY, markerOuterR + 3);
+          drawHollowMarker(markerX, markerY, markerOuterR, markerStroke, "red");
+
+          const roman = toRoman(idx) || "—";
+          const fontSize = Math.max(14, Math.round(markerOuterR * 0.75));
+          drawText(roman, markerX, markerY, fontSize, "white");
         }
 
-        ctx.stroke();
         ctx.restore();
       }
     }
 
-    // =========================
-    // LAYER 2 (UNDER LAYER 1)
-    // =========================
-    function drawLayer2(midX, midY) {
-      const baseR  = Math.min(canvas.width, canvas.height) * 0.15;
-      const outerR = baseR + 80;
-      const half = outerR;
-
-      const count = borderCountForLevel(squareLevel);
-      const mark = markForLevel(squareLevel);
-
+    function renderSquareLayer(midX, midY, half, idx) {
+      // Uses your L-border rule set
+      const count = borderCountForLevel(idx);
+      const mark = markForLevel(idx);
       const transforms = mirroringOn ? mirrors : [[1, 1]];
 
       for (const [sx, sy] of transforms) {
@@ -393,21 +514,28 @@
       }
     }
 
-    // =========================
-    // LAYER 1 (ON TOP)
-    // Outer circle constant; inner circle+marker+roman only when value>0
-    // =========================
-    function drawLayer1(midX, midY) {
-      const innerR = Math.min(canvas.width, canvas.height) * 0.35;
-      const outerR = innerR + 80;
+    function renderDiamondLayer(midX, midY, half, idx) {
+      // Quarter of a diamond (top-right only); mirroring builds full diamond
+      if (idx <= 0) return;
 
-      const start = -Math.PI / 2;
-      const end   = 0;
-      const midAngle = (start + end) / 2;
+      const d = half * 0.90;
+      const lw = 3;
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = lw;
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
 
-      const ringWidth = 3;
-      const markerOuterR = 40;
-      const markerStroke = 3;
+      const segments = 10;
+      const turnOrder = [1, 10, 2, 9, 3, 8, 4, 7, 5, 6];
+      const turned = new Set();
+      const turnCount = Math.min(segments, idx);
+      for (let i = 0; i < turnCount; i++) turned.add(turnOrder[i]);
+
+      const pts = [];
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        pts.push({ x: d * t, y: -d + d * t });
+      }
 
       const transforms = mirroringOn ? mirrors : [[1, 1]];
 
@@ -416,36 +544,237 @@
         ctx.translate(midX, midY);
         ctx.scale(sx, sy);
 
-        // outer circle always
-        strokeArc(outerR, ringWidth, "red", start, end);
+        ctx.beginPath();
+        ctx.rect(0, -half, half, half);
+        ctx.clip();
 
-        if (value > 0) {
-          strokeArc(innerR, ringWidth, "red", start, end);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
 
-          const markerX = Math.cos(midAngle) * innerR;
-          const markerY = Math.sin(midAngle) * innerR;
+        for (let i = 0; i < segments; i++) {
+          const a = pts[i];
+          const b = pts[i + 1];
+          const segIndex = i + 1; // 1..10
 
-          eraseCircle(markerX, markerY, markerOuterR + 3);
-          drawHollowMarker(markerX, markerY, markerOuterR, markerStroke, "red");
-          drawText(toRoman(value) || "—", markerX, markerY, 30, "white");
+          if (!turned.has(segIndex)) {
+            ctx.lineTo(b.x, b.y);
+          } else {
+            ctx.lineTo(b.x, a.y);
+            ctx.lineTo(b.x, b.y);
+          }
+        }
+
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // ------------------------------
+    // Main draw
+    // ------------------------------
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const midX = canvas.width / 2;
+      const midY = canvas.height / 2;
+
+      // Sizes (outer -> inner)
+      const base = Math.min(canvas.width, canvas.height);
+      const layer1OuterR = base * 0.35 + 80; // similar to your old outer ring
+      const layer2Half   = base * 0.23 + 80;
+      const layer3Half   = base * 0.15 + 80;
+
+      // Render confirmed layers only (so "Confirm" matters)
+      // Draw inner first, outer last (so outer sits on top)
+      const order = [3, 2, 1];
+      for (const L of order) {
+        if (!layers[L].confirmed) continue;
+
+        const shape = layers[L].shape;
+        const idx   = layers[L].index;
+
+        if (shape === SHAPES.CIRCLE) {
+          const r = (L === 1) ? layer1OuterR : (L === 2 ? layer2Half : layer3Half);
+          renderCircleLayer(midX, midY, r, idx);
+        } else if (shape === SHAPES.SQUARE) {
+          const half = (L === 1) ? layer1OuterR : (L === 2 ? layer2Half : layer3Half);
+          renderSquareLayer(midX, midY, half, clamp(idx, 0, 10));
+        } else if (shape === SHAPES.DIAMOND) {
+          const half = (L === 1) ? layer1OuterR : (L === 2 ? layer2Half : layer3Half);
+          renderDiamondLayer(midX, midY, half, clamp(idx, 0, 10));
+        }
+      }
+
+      // Quadrant lines always visible
+      drawQuadrantLines(midX, midY);
+
+      // Also preview the current selection (ghost preview) if that layer isn't confirmed yet
+      // (So you can see what you're picking before confirming)
+      if (!layers[editingLayer].confirmed) {
+        ctx.save();
+        ctx.globalAlpha = 0.55; // ghost look
+
+        if (previewShape === SHAPES.CIRCLE) {
+          const r = (editingLayer === 1) ? layer1OuterR : (editingLayer === 2 ? layer2Half : layer3Half);
+          renderCircleLayer(midX, midY, r, previewIndex);
+        } else if (previewShape === SHAPES.SQUARE) {
+          const half = (editingLayer === 1) ? layer1OuterR : (editingLayer === 2 ? layer2Half : layer3Half);
+          renderSquareLayer(midX, midY, half, clamp(previewIndex, 0, 10));
+        } else if (previewShape === SHAPES.DIAMOND) {
+          const half = (editingLayer === 1) ? layer1OuterR : (editingLayer === 2 ? layer2Half : layer3Half);
+          renderDiamondLayer(midX, midY, half, clamp(previewIndex, 0, 10));
         }
 
         ctx.restore();
       }
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const midX = canvas.width / 2;
-      const midY = canvas.height / 2;
-
-      drawLayer3(midX, midY);
-      drawLayer2(midX, midY);
-      drawQuadrantLines(midX, midY);
-      drawLayer1(midX, midY);
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      draw();
     }
 
-    // ---------- UI wiring ----------
+    // ------------------------------
+    // UI sync helpers
+    // ------------------------------
+    function setActiveLayerCard(layer) {
+      editingLayer = layer;
+
+      layerCard1.classList.toggle("active", layer === 1);
+      layerCard2.classList.toggle("active", layer === 2);
+      layerCard3.classList.toggle("active", layer === 3);
+
+      editStatusEl.textContent = `Editing: Layer ${layer}`;
+
+      // If layer is already confirmed, we show what it is, but you can't edit it unless you Reset.
+      if (layers[layer].confirmed) {
+        previewShape = layers[layer].shape;
+        previewIndex = layers[layer].index;
+      }
+
+      syncShapeButtons();
+      syncIndexUI();
+      syncStepUI();
+      draw();
+    }
+
+    function syncShapeButtons() {
+      shapeCircleBtn.classList.toggle("active", previewShape === SHAPES.CIRCLE);
+      shapeSquareBtn.classList.toggle("active", previewShape === SHAPES.SQUARE);
+      shapeDiamondBtn.classList.toggle("active", previewShape === SHAPES.DIAMOND);
+      previewStatusEl.textContent = `Preview: ${shapeLabel(previewShape)} (index ${previewIndex})`;
+
+      // Adjust hint text + index clamping based on shape
+      if (previewShape === SHAPES.CIRCLE) {
+        idxHintEl.textContent = "Circle index: 0..3999 (shown as Roman).";
+        previewIndex = clamp(previewIndex, 0, 3999);
+      } else {
+        idxHintEl.textContent = "Square/Diamond index: 0..10.";
+        previewIndex = clamp(previewIndex, 0, 10);
+      }
+    }
+
+    function syncIndexUI() {
+      idxStatusEl.textContent = `Index: ${previewIndex}`;
+      previewStatusEl.textContent = `Preview: ${shapeLabel(previewShape)} (index ${previewIndex})`;
+    }
+
+    function layerSummaryText(layer) {
+      if (!layers[layer].confirmed) return "Not set";
+      const s = shapeLabel(layers[layer].shape);
+      const i = layers[layer].index;
+      return `${s} (${i})`;
+    }
+
+    function syncLayerSummaries() {
+      layerSummary1.textContent = layerSummaryText(1);
+      layerSummary2.textContent = layerSummaryText(2);
+      layerSummary3.textContent = layerSummaryText(3);
+
+      lock1El.textContent = layers[1].confirmed ? "Confirmed" : "Unlocked";
+      lock2El.textContent = layers[2].confirmed ? "Confirmed" : (layers[1].confirmed ? "Unlocked" : "Locked");
+      lock3El.textContent = layers[3].confirmed ? "Confirmed" : (layers[2].confirmed ? "Unlocked" : "Locked");
+
+      confirm2Btn.disabled = !layers[1].confirmed || layers[2].confirmed;
+      confirm3Btn.disabled = !layers[2].confirmed || layers[3].confirmed;
+
+      // You can always re-confirm layer1 only if not confirmed yet
+      confirm1Btn.disabled = layers[1].confirmed;
+    }
+
+    function syncStepUI() {
+      // Step status: first unconfirmed layer
+      let step = 1;
+      if (layers[1].confirmed && !layers[2].confirmed) step = 2;
+      if (layers[2].confirmed && !layers[3].confirmed) step = 3;
+      if (layers[3].confirmed) step = 4;
+
+      if (step === 4) stepStatusEl.textContent = "Done: All 3 layers confirmed (Reset to change)";
+      else stepStatusEl.textContent = `Step: Pick Layer ${step} → Confirm`;
+
+      syncLayerSummaries();
+    }
+
+    function setPreviewShape(shape) {
+      previewShape = shape;
+      // clamp index for this shape
+      if (previewShape === SHAPES.CIRCLE) previewIndex = clamp(previewIndex, 0, 3999);
+      else previewIndex = clamp(previewIndex, 0, 10);
+
+      syncShapeButtons();
+      syncIndexUI();
+      draw();
+    }
+
+    function changeIndex(delta) {
+      const max = (previewShape === SHAPES.CIRCLE) ? 3999 : 10;
+      previewIndex = clamp(previewIndex + delta, 0, max);
+      syncIndexUI();
+      draw();
+    }
+
+    function confirmLayer(layer) {
+      // must confirm in order (1 then 2 then 3)
+      if (layer === 2 && !layers[1].confirmed) return;
+      if (layer === 3 && !layers[2].confirmed) return;
+      if (layers[layer].confirmed) return;
+
+      layers[layer].shape = previewShape;
+      layers[layer].index = previewIndex;
+      layers[layer].confirmed = true;
+
+      // auto-advance to next layer if possible
+      if (layer < 3) {
+        setActiveLayerCard(layer + 1);
+      } else {
+        syncStepUI();
+        draw();
+      }
+    }
+
+    function resetAll() {
+      layers[1] = { shape: null, index: null, confirmed: false };
+      layers[2] = { shape: null, index: null, confirmed: false };
+      layers[3] = { shape: null, index: null, confirmed: false };
+
+      // default preview
+      editingLayer = 1;
+      previewShape = SHAPES.CIRCLE;
+      previewIndex = 6;
+
+      confirm1Btn.disabled = false;
+      confirm2Btn.disabled = true;
+      confirm3Btn.disabled = true;
+
+      setActiveLayerCard(1);
+      syncStepUI();
+      draw();
+    }
+
+    // ------------------------------
+    // UI Wiring
+    // ------------------------------
     toggleMirrorBtn.addEventListener("click", () => {
       mirroringOn = !mirroringOn;
       toggleMirrorBtn.textContent = `Mirroring: ${mirroringOn ? "ON" : "OFF"}`;
@@ -453,38 +782,32 @@
       draw();
     });
 
-    minusRomanBtn.addEventListener("click", () => {
-      value = Math.max(0, value - 1);
-      updateRomanUI();
-    });
-    plusRomanBtn.addEventListener("click", () => {
-      value = Math.min(3999, value + 1);
-      updateRomanUI();
-    });
+    resetAllBtn.addEventListener("click", resetAll);
 
-    minusSquareBtn.addEventListener("click", () => {
-      squareLevel = Math.max(0, squareLevel - 1);
-      updateSquareUI();
-    });
-    plusSquareBtn.addEventListener("click", () => {
-      squareLevel = Math.min(10, squareLevel + 1);
-      updateSquareUI();
-    });
+    layerCard1.addEventListener("click", () => setActiveLayerCard(1));
+    layerCard2.addEventListener("click", () => setActiveLayerCard(2));
+    layerCard3.addEventListener("click", () => setActiveLayerCard(3));
 
-    minusDiamondBtn.addEventListener("click", () => {
-      diamondLevel = Math.max(0, diamondLevel - 1);
-      updateDiamondUI();
-    });
-    plusDiamondBtn.addEventListener("click", () => {
-      diamondLevel = Math.min(10, diamondLevel + 1);
-      updateDiamondUI();
-    });
+    shapeCircleBtn.addEventListener("click", () => setPreviewShape(SHAPES.CIRCLE));
+    shapeSquareBtn.addEventListener("click", () => setPreviewShape(SHAPES.SQUARE));
+    shapeDiamondBtn.addEventListener("click", () => setPreviewShape(SHAPES.DIAMOND));
 
+    minusIdxBtn.addEventListener("click", () => changeIndex(-1));
+    plusIdxBtn.addEventListener("click",  () => changeIndex(+1));
+
+    confirm1Btn.addEventListener("click", () => confirmLayer(1));
+    confirm2Btn.addEventListener("click", () => confirmLayer(2));
+    confirm3Btn.addEventListener("click", () => confirmLayer(3));
+
+    // ------------------------------
+    // Start
+    // ------------------------------
     window.addEventListener("resize", resize);
     resize();
-    updateRomanUI();
-    updateSquareUI();
-    updateDiamondUI();
+    syncStepUI();
+    syncShapeButtons();
+    syncIndexUI();
+    draw();
   </script>
 </body>
 </html>
