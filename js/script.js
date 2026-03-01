@@ -3,16 +3,18 @@ class Target {
         this.target = document.createElement("div");
         this.target.classList.add("targets");
         this.target.style.position = "absolute";
-        this.target.style.width = "50px";
-        this.target.style.height = "50px";
+        this.target.style.width = "60px";
+        this.target.style.height = "100px";
         this.container = container;
-        this.target.style.backgroundColor = "red";
+        this.target.style.backgroundImage = "url('../../img/skeleton.png')";
+        this.target.style.backgroundSize = 'cover';
+        this.target.style.backgroundPosition = 'center';
         this.container.appendChild(this.target);
     }
 
     placeTargetRandomly() {
         const containerWidth = this.container.clientWidth;
-        const containerHeight = this.container.clientWidth;
+        const containerHeight = this.container.clientHeight;
 
         const targetWidth = this.target.offsetWidth;
         const targetHeight = this.target.offsetHeight;
@@ -50,23 +52,27 @@ function shootingBullet(container, bullet, targets) {
     const startLeft = parseFloat(window.getComputedStyle(bullet).left);
     const startTop = parseFloat(window.getComputedStyle(bullet).top);
     const score = document.getElementById("score");
+    const user = document.getElementById("user");
+    let y = getY(1, -2, 0);
+
+    user.style.top = startTop - y + "px";
 
     bullet.hidden = false;
 
     let IntervalId = setInterval(() => {
-        let y = getY(1, -2, x);
+        y = getY(1, -2, x);
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
-        x+=1;
+        x += 1;
 
-        if(isTouching(bullet, targets)) {
+        if (isTouching(bullet, targets)) {
             numTargetRemoved++;
             console.log(`Number of targets removed: ${numTargetRemoved}`)
             score.innerText = `Score: ${numTargetRemoved.toString()}`
         }
 
-        if(finishShooting(container, bullet)) {
+        if (finishShooting(container, bullet)) {
             moveBulletToStartPoint(bullet);
             moveTargets(targets);
             clearInterval(IntervalId);
@@ -77,7 +83,7 @@ function shootingBullet(container, bullet, targets) {
 function isTouching(bullet, targets) {
     const bulletRect = bullet.getBoundingClientRect();
 
-    for (let i = targets.length - 1; i>=0; i--) {
+    for (let i = targets.length - 1; i >= 0; i--) {
         const targetObj = targets[i];
         const targetRect = targetObj.target.getBoundingClientRect();
         const horizontalOverlap = bulletRect.right > targetRect.left && bulletRect.left < targetRect.right;
@@ -98,9 +104,9 @@ function finishShooting(container, bullet) {
     let containerRect = container.getBoundingClientRect();
 
     return bulletRect.right <= containerRect.left ||
-    bulletRect.left >= containerRect.right ||
-    bulletRect.bottom <= containerRect.top ||
-    bulletRect.top >= containerRect.bottom;
+        bulletRect.left >= containerRect.right ||
+        bulletRect.bottom <= containerRect.top ||
+        bulletRect.top >= containerRect.bottom;
 }
 
 function moveBulletToStartPoint(bullet) {
@@ -124,7 +130,7 @@ startBtn.addEventListener("click", (event) => {
     numTargetRemoved = 0;
     container.querySelectorAll(".targets").forEach(t => t.remove());
 
-    for (let i=0; i < 5; i++) {
+    for (let i = 0; i < 5; i++) {
         const target = new Target(container);
         target.placeTargetRandomly();
         targets.push(target);
@@ -133,5 +139,5 @@ startBtn.addEventListener("click", (event) => {
 });
 
 runBtn.addEventListener("click", (event) => {
-    shootingBullet(container, bullet, targets, numTargetRemoved, score);
+    shootingBullet(container, bullet, targets, numTargetRemoved, score, startBtn);
 });
