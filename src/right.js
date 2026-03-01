@@ -16,7 +16,6 @@ const SHAPES = Object.freeze({
 });
 
 const mirrors = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
-const MAX_LAYERS = 3;
 const MAX_INDEX = 10;
 
 const COLORS = Object.freeze({
@@ -65,13 +64,6 @@ function colorForPolarity(polarity) {
   return polarity === "negative" ? COLORS.negative : COLORS.positive;
 }
 
-function shapeLabel(shape) {
-  if (shape === SHAPES.CIRCLE) return "circle";
-  if (shape === SHAPES.SQUARE) return "square";
-  if (shape === SHAPES.DIAMOND) return "diamond";
-  return "—";
-}
-
 function activeLayerNumber() {
   if (layers[3].confirmed) return 3;
   if (layers[2].confirmed) return 2;
@@ -84,10 +76,6 @@ function nextLayerNumber() {
   if (!layers[2].confirmed) return 2;
   if (!layers[3].confirmed) return 3;
   return null;
-}
-
-function layerKey(layer) {
-  return `${layer.shape}:${layer.polarity}`;
 }
 
 function applyGlow(color) {
