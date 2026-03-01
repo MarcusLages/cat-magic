@@ -17,10 +17,9 @@ class Target {
         const targetWidth = this.target.offsetWidth;
         const targetHeight = this.target.offsetHeight;
 
-        const randomLeft = Math.random() * (containerWidth - targetWidth);
         const randomTop = Math.random() * (containerHeight - targetHeight);
 
-        this.target.style.left = `${randomLeft}px`;
+        this.target.style.left = `${containerWidth - targetWidth}px`;
         this.target.style.top = `${randomTop}px`;
         this.m = Math.random() * 4 - 2;
         this.b = Math.random() * 100;
@@ -46,14 +45,8 @@ function store_target_variables(tagetVars) {
 }
 
 function move_targets(targets, x) {
-    console.log(targets);
-
     targets.forEach(targetObj => {
-        const m = targetObj.m;
-        const b = targetObj.b;
-
-        const y = get_y(m, b, x);
-        move(targetObj.target, x, y);
+        move(targetObj.target, -x, 0);
     });
 }
 
