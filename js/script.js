@@ -49,6 +49,7 @@ function shootingBullet(container, bullet, targets) {
 
     const startLeft = parseFloat(window.getComputedStyle(bullet).left);
     const startTop = parseFloat(window.getComputedStyle(bullet).top);
+    const score = document.getElementById("score");
 
     bullet.hidden = false;
 
@@ -62,7 +63,7 @@ function shootingBullet(container, bullet, targets) {
         if(isTouching(bullet, targets)) {
             numTargetRemoved++;
             console.log(`Number of targets removed: ${numTargetRemoved}`)
-
+            score.innerText = `Score: ${numTargetRemoved.toString()}`
         }
 
         if(finishShooting(container, bullet)) {
@@ -114,8 +115,8 @@ const container = document.getElementById("container");
 const bullet = document.getElementById("bullet");
 const startBtn = document.getElementById("startBtn");
 const runBtn = document.getElementById("runBtn");
+
 let targets = [];
-const x = 0;
 let numTargetRemoved = 0;
 
 startBtn.addEventListener("click", (event) => {
@@ -132,5 +133,5 @@ startBtn.addEventListener("click", (event) => {
 });
 
 runBtn.addEventListener("click", (event) => {
-    shootingBullet(container, bullet, targets, numTargetRemoved);
+    shootingBullet(container, bullet, targets, numTargetRemoved, score);
 });
