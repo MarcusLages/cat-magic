@@ -53,6 +53,7 @@ function shooting_bullet(container, bullet) {
         x+=5;
         
         if(finish_shooting(container, bullet)) {
+            move_bullet_to_start_point(bullet);
             clearInterval(IntervalId);
         }
     }, 20);
@@ -68,6 +69,12 @@ function finish_shooting(container, bullet) {
     bulletRect.top >= containerRect.bottom;
 }
 
+function move_bullet_to_start_point(bullet) {
+    bullet.style.top = "200px";
+    bullet.style.left = "0px";
+}
+
+
 
 const container = document.getElementById("container");
 const bullet = document.getElementById("bullet");
@@ -76,7 +83,7 @@ const runBtn = document.getElementById("runBtn");
 
 startBtn.addEventListener("click", (event) => {
     const targets = document.querySelectorAll(".targets");
-    
+
     targets.forEach(target => {
         target.remove();
     });
