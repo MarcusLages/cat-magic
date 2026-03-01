@@ -6,7 +6,23 @@
   <title>3 Layers - Per-layer color + Glow + Outer on top</title>
   <style>
     html, body { height: 100%; margin: 0; }
-    canvas { display: block; background: #111; }
+    body { background: #111; }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: clamp(8px, 1.5vw, 16px);
+      box-sizing: border-box;
+    }
+
+    canvas {
+      display: block;
+      background: #111;
+      width: 100%;
+      height: 100%;
+    }
 
     :root {
       --panel: #1b1b1b;
@@ -15,25 +31,39 @@
       --text: #fff;
     }
 
-    #uiLeft, #uiRight {
-      position: fixed;
-      top: 12px;
+    #rightDock {
+      position: absolute;
+      top: clamp(8px, 1.5vw, 16px);
+      right: clamp(8px, 1.5vw, 16px);
       z-index: 10;
       font: 14px system-ui;
       color: var(--text);
       display: flex;
-      gap: 10px;
-      align-items: center;
+      flex-direction: column;
+      gap: clamp(10px, 1.5vw, 18px);
+      width: clamp(260px, 30vw, 380px);
+      max-height: calc(100% - clamp(16px, 3vw, 32px));
+      pointer-events: auto;
     }
 
-    #uiLeft { left: 12px; }
+    #drawPanel {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
 
     #uiRight {
-      right: 12px;
+      display: flex;
       flex-direction: column;
       align-items: stretch;
       gap: 10px;
-      min-width: 380px;
+      width: 100%;
+      min-height: 0;
+      overflow: auto;
     }
 
     .panel {
@@ -144,121 +174,94 @@
   </style>
 </head>
 <body>
-  <div id="uiLeft">
-    <button id="toggleMirror">Mirroring: ON</button>
-    <span id="mirrorStatus" class="pill">Drawing 4 quadrants</span>
-  </div>
+  <div id="app">
+    <div id="rightDock">
+      <div id="drawPanel">
+        <canvas id="c"></canvas>
+      </div>
 
-  <div id="uiRight">
-    <div class="panel">
-      <div class="statusLine">
-        <span class="pill" id="stepStatus">Step: Pick Layer 1 → Confirm</span>
-        <button class="btnSmall" id="resetAll">Reset</button>
-      </div>
-      <div class="hint">
-        Color is per-layer and editable anytime. Outer layers draw on top.
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="row" style="margin-bottom:10px;">
-        <span class="pill" id="polarityHeader">Selected layer color</span>
-        <span class="pill">Mix per layer (e.g., red/red/blue)</span>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <div class="segmented">
-          <button id="polPositive" class="active" type="button">Positive (Red)</button>
-          <button id="polNegative" type="button">Negative (Blue)</button>
+      <div id="uiRight">
+        <div class="panel">
+          <div class="row">
+            <button class="btnSmall" id="clearShape">Clear</button>
+            <button class="btnSmall" id="runBtn" type="button">Run</button>
+          </div>
         </div>
-      </div>
 
-      <div class="row" style="margin-bottom:10px;">
-        <div class="segmented">
-          <button id="glowOn" class="active" type="button">Glow: ON</button>
-          <button id="glowOff" type="button">Glow: OFF</button>
+        <div class="panel">
+          <div class="row" style="margin-bottom:10px;">
+            <div class="segmented">
+              <button id="polPositive" class="active" type="button">Positive (Red)</button>
+              <button id="polNegative" type="button">Negative (Blue)</button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="sliderRow">
-        <span class="pill" style="min-width:110px; text-align:center;">Glow</span>
-        <input id="glowStrength" type="range" min="0" max="40" step="1" value="18" />
-        <span id="glowValue" class="pill" style="min-width:50px; text-align:center;">18</span>
-      </div>
-      <div class="hint">Glow affects strokes + marker ring + V/X marks.</div>
-    </div>
+        <div class="panel" id="layersPanel">
+          <div class="layerCard active" data-layer="1" id="layerCard1">
+            <div class="layerTitle">
+              <strong>Layer 1 (Outer)</strong>
+              <span id="layerSummary1" class="pill">Not set</span>
+            </div>
+            <div class="confirmRow">
+              <button class="btnWide" id="confirm1">Confirm Layer 1</button>
+              <span id="lock1" class="lockBadge">Unlocked</span>
+            </div>
+          </div>
 
-    <div class="panel" id="layersPanel">
-      <div class="layerCard active" data-layer="1" id="layerCard1">
-        <div class="layerTitle">
-          <strong>Layer 1 (Outer)</strong>
-          <span id="layerSummary1" class="pill">Not set</span>
+          <div class="layerCard" data-layer="2" id="layerCard2">
+            <div class="layerTitle">
+              <strong>Layer 2 (Middle)</strong>
+              <span id="layerSummary2" class="pill">Not set</span>
+            </div>
+            <div class="confirmRow">
+              <button class="btnWide" id="confirm2" disabled>Confirm Layer 2</button>
+              <span id="lock2" class="lockBadge">Locked</span>
+            </div>
+          </div>
+
+          <div class="layerCard" data-layer="3" id="layerCard3">
+            <div class="layerTitle">
+              <strong>Layer 3 (Inner)</strong>
+              <span id="layerSummary3" class="pill">Not set</span>
+            </div>
+            <div class="confirmRow">
+              <button class="btnWide" id="confirm3" disabled>Confirm Layer 3</button>
+              <span id="lock3" class="lockBadge">Locked</span>
+            </div>
+          </div>
         </div>
-        <div class="confirmRow">
-          <button class="btnWide" id="confirm1">Confirm Layer 1</button>
-          <span id="lock1" class="lockBadge">Unlocked</span>
-        </div>
-      </div>
 
-      <div class="layerCard" data-layer="2" id="layerCard2">
-        <div class="layerTitle">
-          <strong>Layer 2 (Middle)</strong>
-          <span id="layerSummary2" class="pill">Not set</span>
-        </div>
-        <div class="confirmRow">
-          <button class="btnWide" id="confirm2" disabled>Confirm Layer 2</button>
-          <span id="lock2" class="lockBadge">Locked</span>
-        </div>
-      </div>
+        <div class="panel">
+          <div class="row" style="margin-bottom:10px;">
+            <span class="pill" id="editStatus">Editing: Layer 1</span>
+            <span class="pill" id="previewStatus">Preview: Circle (index 6)</span>
+          </div>
 
-      <div class="layerCard" data-layer="3" id="layerCard3">
-        <div class="layerTitle">
-          <strong>Layer 3 (Inner)</strong>
-          <span id="layerSummary3" class="pill">Not set</span>
+          <div class="row" style="margin-bottom:10px;">
+            <div class="segmented">
+              <button id="shapeCircle" class="active" type="button">Circle</button>
+              <button id="shapeSquare" type="button">Square</button>
+              <button id="shapeDiamond" type="button">Diamond</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <input id="idxBar" type="range" min="0" max="3999" step="1" value="6" />
+          </div>
         </div>
-        <div class="confirmRow">
-          <button class="btnWide" id="confirm3" disabled>Confirm Layer 3</button>
-          <span id="lock3" class="lockBadge">Locked</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="row" style="margin-bottom:10px;">
-        <span class="pill" id="editStatus">Editing: Layer 1</span>
-        <span class="pill" id="previewStatus">Preview: Circle (index 6)</span>
-      </div>
-
-      <div class="row" style="margin-bottom:10px;">
-        <div class="segmented">
-          <button id="shapeCircle" class="active" type="button">Circle</button>
-          <button id="shapeSquare" type="button">Square</button>
-          <button id="shapeDiamond" type="button">Diamond</button>
-        </div>
-      </div>
-
-      <div class="row">
-        <button id="minusIdx">−</button>
-        <span id="idxStatus" class="pill">Index: 6</span>
-        <button id="plusIdx">+</button>
-      </div>
-
-      <div class="hint" id="idxHint">
-        Circle index: 0..3999 (shown as Roman). Square/Diamond index: 0..10.
       </div>
     </div>
   </div>
-
-  <canvas id="c"></canvas>
 
   <script>
+    const appEl = document.getElementById("app");
+    const drawPanelEl = document.getElementById("drawPanel");
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d");
 
-    const toggleMirrorBtn = document.getElementById("toggleMirror");
-    const mirrorStatusEl  = document.getElementById("mirrorStatus");
-
-    const stepStatusEl    = document.getElementById("stepStatus");
-    const resetAllBtn     = document.getElementById("resetAll");
+    const clearShapeBtn   = document.getElementById("clearShape");
+    const runBtn          = document.getElementById("runBtn");
 
     const layerCard1      = document.getElementById("layerCard1");
     const layerCard2      = document.getElementById("layerCard2");
@@ -282,28 +285,22 @@
     const shapeCircleBtn  = document.getElementById("shapeCircle");
     const shapeSquareBtn  = document.getElementById("shapeSquare");
     const shapeDiamondBtn = document.getElementById("shapeDiamond");
-
-    const minusIdxBtn     = document.getElementById("minusIdx");
-    const plusIdxBtn      = document.getElementById("plusIdx");
-    const idxStatusEl     = document.getElementById("idxStatus");
-    const idxHintEl       = document.getElementById("idxHint");
+    const idxBarEl        = document.getElementById("idxBar");
 
     const polPositiveBtn  = document.getElementById("polPositive");
     const polNegativeBtn  = document.getElementById("polNegative");
-    const polarityHeader  = document.getElementById("polarityHeader");
-
-    const glowOnBtn       = document.getElementById("glowOn");
-    const glowOffBtn      = document.getElementById("glowOff");
-    const glowStrengthEl  = document.getElementById("glowStrength");
-    const glowValueEl     = document.getElementById("glowValue");
-
     // mirroring
-    let mirroringOn = true;
+    const mirroringOn = true;
     const mirrors = [[1,1],[-1,1],[1,-1],[-1,-1]];
 
     // viewport in CSS pixels (important for HiDPI)
-    let viewW = window.innerWidth;
-    let viewH = window.innerHeight;
+    let viewW = appEl.clientWidth;
+    let viewH = appEl.clientHeight;
+    let relUnit = 1;
+
+    function rel(px) {
+      return px * relUnit;
+    }
 
     // colors
     const COLORS = Object.freeze({
@@ -311,12 +308,11 @@
       NEGATIVE: "#2b7bff",
     });
 
-    // glow
-    let glowEnabled = true;
-    let glowStrength = Number(glowStrengthEl.value) || 18;
+    // glow (always on)
+    const glowStrength = 18;
 
     function applyGlow(color) {
-      if (!glowEnabled || glowStrength <= 0) {
+      if (glowStrength <= 0) {
         ctx.shadowBlur = 0;
         ctx.shadowColor = "transparent";
         return;
@@ -398,7 +394,7 @@
     function drawQuadrantLines(midX, midY) {
       clearGlow();
       ctx.strokeStyle = "white";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = rel(2);
       ctx.beginPath();
       ctx.moveTo(midX, 0); ctx.lineTo(midX, viewH);
       ctx.moveTo(0, midY); ctx.lineTo(viewW, midY);
@@ -452,8 +448,8 @@
 
     function drawLBorder(half, count, color) {
       if (count <= 0) return;
-      const spacing = 8;
-      const lw = 3;
+      const spacing = rel(8);
+      const lw = rel(3);
 
       ctx.strokeStyle = color;
       ctx.lineWidth = lw;
@@ -468,7 +464,7 @@
         const x1 = half - inset;
         const y1 = 0 - inset;
 
-        if (x0 >= x1 - 2 || y0 >= y1 - 2) break;
+        if (x0 >= x1 - rel(2) || y0 >= y1 - rel(2)) break;
 
         ctx.beginPath();
         ctx.moveTo(x0, y0);
@@ -485,16 +481,16 @@
     }
 
     function drawMarkNearCorner(half, type, color) {
-      const lw = 3;
+      const lw = rel(3);
       ctx.strokeStyle = color;
       ctx.lineWidth = lw;
       ctx.lineCap = "butt";
       applyGlow(color);
 
-      const pad = 52;
+      const pad = rel(52);
       const cx = half - pad;
       const cy = -half + pad;
-      const s = 12;
+      const s = rel(12);
 
       if (type === "V") {
         ctx.beginPath();
@@ -516,18 +512,18 @@
 
     // shape renderers
     function renderCircleLayer(midX, midY, sizeOuterR, idx, strokeColor) {
-      const innerR = sizeOuterR - 80;
+      const innerR = sizeOuterR - rel(80);
       const outerR = sizeOuterR;
 
       const start = -Math.PI / 2;
       const end   = 0;
       const midAngle = (start + end) / 2;
 
-      const ringWidth = 3;
-      const markerOuterR = Math.max(18, Math.round(sizeOuterR * 0.10));
-      const markerStroke = 3;
+      const ringWidth = rel(3);
+      const markerOuterR = Math.max(rel(18), Math.round(sizeOuterR * 0.10));
+      const markerStroke = rel(3);
 
-      const transforms = mirroringOn ? mirrors : [[1, 1]];
+      const transforms = mirrors;
 
       for (const [sx, sy] of transforms) {
         ctx.save();
@@ -542,11 +538,11 @@
           const markerX = Math.cos(midAngle) * innerR;
           const markerY = Math.sin(midAngle) * innerR;
 
-          eraseCircle(markerX, markerY, markerOuterR + 3);
+          eraseCircle(markerX, markerY, markerOuterR + rel(3));
           drawHollowMarker(markerX, markerY, markerOuterR, markerStroke, strokeColor);
 
           const roman = toRoman(idx) || "—";
-          const fontSize = Math.max(14, Math.round(markerOuterR * 0.75));
+          const fontSize = Math.max(rel(14), Math.round(markerOuterR * 0.75));
           drawText(roman, markerX, markerY, fontSize, "white");
         }
 
@@ -563,21 +559,21 @@
         if (layers[L].shape !== SHAPES.CIRCLE) continue;
 
         const outerR = radiusForLayerCircleOnly(L);
-        const innerR = outerR - 80;
+        const innerR = outerR - rel(80);
         limitingInnerR = Math.min(limitingInnerR, innerR);
       }
 
       if (!Number.isFinite(limitingInnerR)) return Infinity;
 
-      const margin = 18;
+      const margin = rel(18);
       const maxHalf = (limitingInnerR - margin) / Math.SQRT2;
-      return Math.max(20, maxHalf);
+      return Math.max(rel(20), maxHalf);
     }
 
     function renderSquareLayer(midX, midY, half, idx, strokeColor) {
       const count = borderCountForLevel(idx);
       const mark = markForLevel(idx);
-      const transforms = mirroringOn ? mirrors : [[1, 1]];
+      const transforms = mirrors;
 
       for (const [sx, sy] of transforms) {
         ctx.save();
@@ -598,10 +594,10 @@
     function renderDiamondLayer(midX, midY, half, idx, strokeColor) {
       if (idx <= 0) return;
 
-      const transforms = mirroringOn ? mirrors : [[1, 1]];
+      const transforms = mirrors;
       const d = half * 0.90;
 
-      const lw = 3;
+      const lw = rel(3);
       const segments = 10;
       const turnOrder = [1, 10, 2, 9, 3, 8, 4, 7, 5, 6];
       const turned = new Set();
@@ -663,17 +659,17 @@
       const base = Math.min(viewW, viewH);
 
       // Circle sizing (unchanged)
-      const layer1CircleR = base * 0.35 + 80;
+      const layer1CircleR = base * 0.35 + rel(80);
 
       // FIX #1: Separate Layer 1 square vs diamond sizes
       // - square: smaller (prevents "HUGE" square)
       // - diamond: bigger (fixes "diamond too small")
-      const layer1SquareHalf  = base * 0.24 + 62;
-      const layer1DiamondHalf = base * 0.30 + 78;
+      const layer1SquareHalf  = base * 0.24 + rel(62);
+      const layer1DiamondHalf = base * 0.30 + rel(78);
 
       // Inner target sizes
-      const layer2Half = base * 0.24 + 84;
-      const layer3Half = base * 0.15 + 80;
+      const layer2Half = base * 0.24 + rel(84);
+      const layer3Half = base * 0.15 + rel(80);
 
       return { layer1CircleR, layer1SquareHalf, layer1DiamondHalf, layer2Half, layer3Half };
     }
@@ -684,16 +680,24 @@
         [SHAPES.SQUARE]:  { 2: 0.94, 3: 0.74 },
         [SHAPES.DIAMOND]: { 2: 0.95, 3: 0.86 },
       };
+      const layer2IsCircle =
+        layer === 3 &&
+        layers[2].confirmed &&
+        layers[2].shape === SHAPES.CIRCLE;
 
       // Outer is circle
       if (outerIsCircle()) {
         if (layer === 2) {
           if (shape === SHAPES.SQUARE) return 0.95;   // L2 square under circle: keep comfortably larger
-          if (shape === SHAPES.DIAMOND) return 1.25;  // keep L2 diamond big
+          if (shape === SHAPES.DIAMOND) return 1.32;  // keep L2 diamond big
         }
         if (layer === 3) {
+          if (layer2IsCircle) {
+            if (shape === SHAPES.SQUARE) return 0.82;
+            if (shape === SHAPES.DIAMOND) return 1;
+          }
           // FIX #3: L3 square too big under outer circle → shrink more
-          if (shape === SHAPES.SQUARE) return layer2SameShape ? 0.62 : 0.68;
+          if (shape === SHAPES.SQUARE) return layer2SameShape ? 0.56 : 0.7;
           if (shape === SHAPES.DIAMOND) return BASE[SHAPES.DIAMOND][3];
         }
         return 1.0;
@@ -703,13 +707,15 @@
       if (outerIsSquare()) {
         // You wanted "only change it for square; keep diamond the same as before"
         if (shape === SHAPES.SQUARE) {
-          if (layer === 2) return 0.72;
-          // if (layer === 3) return layer2SameShape ? 0.66 : 0.72;
+          if (layer === 2) return 0.67;
+          if (layer === 3 && layer2IsCircle) return 0.82;
+          if (layer === 3) return layer2SameShape ? 0.56 : 0.7;
         }
 
         if (shape === SHAPES.DIAMOND) {
           // FIX #2: when outer is square, L2 diamond too small → bump it
           if (layer === 2) return 1.02;
+          if (layer === 3 && layer2IsCircle) return 1;
 
           // Keep L3 diamond mostly as before; only shrink if repeating to prevent overlap
           // if (layer === 3) return layer2SameShape ? 0.74 : BASE[SHAPES.DIAMOND][3];
@@ -722,6 +728,10 @@
       // Default
       if (layer === 2) return (BASE[shape]?.[2] ?? 1.0);
       if (layer === 3) {
+        if (layer2IsCircle) {
+          if (shape === SHAPES.SQUARE) return 0.76;
+          if (shape === SHAPES.DIAMOND) return 0.92;
+        }
         if (layer2SameShape) {
           if (shape === SHAPES.SQUARE) return 0.68;
           if (shape === SHAPES.DIAMOND) return BASE[SHAPES.DIAMOND][3];
@@ -744,6 +754,8 @@
     function radiusForLayerCircle(layer, sizes) {
       if (layer === 1) return sizes.layer1CircleR;
       if (layer === 2) return sizes.layer2Half;
+      const layer2IsCircle = layers[2].confirmed && layers[2].shape === SHAPES.CIRCLE;
+      if (layer2IsCircle) return sizes.layer3Half * 0.95;
       return sizes.layer3Half;
     }
 
@@ -786,7 +798,7 @@
         }
       }
 
-      drawQuadrantLines(midX, midY);
+      // Axis lines removed
 
       // ghost preview for current layer if not confirmed yet
       if (!layers[editingLayer].confirmed) {
@@ -829,9 +841,11 @@
     // ---------- HiDPI / Retina resize (crisp canvas) ----------
     function resize() {
       const dpr = window.devicePixelRatio || 1;
+      const rect = drawPanelEl.getBoundingClientRect();
 
-      viewW = window.innerWidth;
-      viewH = window.innerHeight;
+      viewW = Math.max(1, Math.floor(rect.width));
+      viewH = Math.max(1, Math.floor(rect.height));
+      relUnit = Math.max(0.65, Math.min(1.8, Math.min(viewW, viewH) / 900));
 
       canvas.style.width = `${viewW}px`;
       canvas.style.height = `${viewH}px`;
@@ -844,18 +858,10 @@
       draw();
     }
 
-    function syncGlowUI() {
-      glowOnBtn.classList.toggle("active", glowEnabled);
-      glowOffBtn.classList.toggle("active", !glowEnabled);
-      glowStrengthEl.disabled = !glowEnabled;
-      glowValueEl.textContent = String(glowStrength);
-    }
-
     function syncPolarityUI() {
       const p = layers[editingLayer].polarity;
       polPositiveBtn.classList.toggle("active", p === "positive");
       polNegativeBtn.classList.toggle("active", p === "negative");
-      polarityHeader.textContent = `Selected layer color (Layer ${editingLayer})`;
     }
 
     function syncShapeButtons() {
@@ -864,18 +870,19 @@
       shapeDiamondBtn.classList.toggle("active", previewShape === SHAPES.DIAMOND);
 
       if (previewShape === SHAPES.CIRCLE) {
-        idxHintEl.textContent = "Circle index: 0..3999 (shown as Roman).";
         previewIndex = clamp(previewIndex, 0, 3999);
+        idxBarEl.max = "3999";
       } else {
-        idxHintEl.textContent = "Square/Diamond index: 0..10.";
         previewIndex = clamp(previewIndex, 0, 10);
+        idxBarEl.max = "10";
       }
+      idxBarEl.value = String(previewIndex);
 
       previewStatusEl.textContent = `Preview: ${shapeLabel(previewShape)} (index ${previewIndex})`;
     }
 
     function syncIndexUI() {
-      idxStatusEl.textContent = `Index: ${previewIndex}`;
+      idxBarEl.value = String(previewIndex);
       previewStatusEl.textContent = `Preview: ${shapeLabel(previewShape)} (index ${previewIndex})`;
     }
 
@@ -902,15 +909,6 @@
     }
 
     function syncStepUI() {
-      let step = 1;
-      if (layers[1].confirmed && !layers[2].confirmed) step = 2;
-      if (layers[2].confirmed && !layers[3].confirmed) step = 3;
-      if (layers[3].confirmed) step = 4;
-
-      stepStatusEl.textContent = (step === 4)
-        ? "Done: All 3 layers confirmed (Reset to change)"
-        : `Step: Pick Layer ${step} → Confirm`;
-
       syncLayerSummaries();
     }
 
@@ -977,14 +975,8 @@
     }
 
     // Events
-    toggleMirrorBtn.addEventListener("click", () => {
-      mirroringOn = !mirroringOn;
-      toggleMirrorBtn.textContent = `Mirroring: ${mirroringOn ? "ON" : "OFF"}`;
-      mirrorStatusEl.textContent = mirroringOn ? "Drawing 4 quadrants" : "Drawing top-right only";
-      draw();
-    });
-
-    resetAllBtn.addEventListener("click", resetAll);
+    clearShapeBtn.addEventListener("click", resetAll);
+    runBtn.addEventListener("click", () => {});
 
     layerCard1.addEventListener("click", () => setActiveLayerCard(1));
     layerCard2.addEventListener("click", () => setActiveLayerCard(2));
@@ -993,9 +985,11 @@
     shapeCircleBtn.addEventListener("click", () => setPreviewShape(SHAPES.CIRCLE));
     shapeSquareBtn.addEventListener("click", () => setPreviewShape(SHAPES.SQUARE));
     shapeDiamondBtn.addEventListener("click", () => setPreviewShape(SHAPES.DIAMOND));
-
-    minusIdxBtn.addEventListener("click", () => changeIndex(-1));
-    plusIdxBtn.addEventListener("click",  () => changeIndex(+1));
+    idxBarEl.addEventListener("input", (e) => {
+      previewIndex = Number(e.target.value) || 0;
+      syncIndexUI();
+      draw();
+    });
 
     // stop bubbling from Confirm buttons into layer card click
     confirm1Btn.addEventListener("click", (e) => { e.stopPropagation(); confirmLayer(1); });
@@ -1016,19 +1010,9 @@
       draw();
     });
 
-    // Glow global
-    glowOnBtn.addEventListener("click", () => { glowEnabled = true; syncGlowUI(); draw(); });
-    glowOffBtn.addEventListener("click", () => { glowEnabled = false; syncGlowUI(); draw(); });
-    glowStrengthEl.addEventListener("input", (e) => {
-      glowStrength = Number(e.target.value) || 0;
-      syncGlowUI();
-      draw();
-    });
-
     window.addEventListener("resize", resize);
 
     // start
-    syncGlowUI();
     resize();
     setActiveLayerCard(1);
   </script>
