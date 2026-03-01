@@ -26,7 +26,7 @@ class Target {
     }
 }
 
-function get_y(m, b, x) {
+function getY(m, b, x) {
     return m * x + b
 }
 
@@ -38,19 +38,19 @@ function move(element, x, y) {
     element.style.top = (Number(verticleValue) + y) + "px";
 }
 
-function store_target_variables(tagetVars) {
+function storeTargetVariables(tagetVars) {
     const m = Math.random() * (10);
     const b = Math.random() * (10);
     tagetVars.push([m, b]);
 }
 
-function move_targets(targets, x) {
+function moveTargets(targets, x) {
     targets.forEach(targetObj => {
         move(targetObj.target, -x, 0);
     });
 }
 
-function shooting_bullet(container, bullet, targets) {
+function shootingBullet(container, bullet, targets) {
     let x = 0;
 
     const startLeft = parseFloat(window.getComputedStyle(bullet).left);
@@ -59,21 +59,21 @@ function shooting_bullet(container, bullet, targets) {
     bullet.hidden = false;
 
     let IntervalId = setInterval(() => {
-        let y = get_y(2, 0, x);
+        let y = getY(2, 0, x);
 
         bullet.style.left = startLeft + x + "px";
         bullet.style.top = startTop - y + "px";
         x+=1;
         
-        if(finish_shooting(container, bullet)) {
-            move_bullet_to_start_point(bullet);
-            move_targets(targets, x);
+        if(finishShooting(container, bullet)) {
+            moveBulletToStartPoint(bullet);
+            moveTargets(targets, x);
             clearInterval(IntervalId);
         }
     }, 5);
 }
 
-function finish_shooting(container, bullet) {
+function finishShooting(container, bullet) {
     let bulletRect = bullet.getBoundingClientRect();
     let containerRect = container.getBoundingClientRect();
 
@@ -83,7 +83,7 @@ function finish_shooting(container, bullet) {
     bulletRect.top >= containerRect.bottom;
 }
 
-function move_bullet_to_start_point(bullet) {
+function moveBulletToStartPoint(bullet) {
     bullet.style.top = "200px";
     bullet.style.left = "0px";
     bullet.hidden = true;
@@ -106,13 +106,13 @@ startBtn.addEventListener("click", (event) => {
     for (let i=0; i < 5; i++) {
         const target = new Target(container);
         target.placeTargetRandomly();
-        store_target_variables(targetVars);
+        storeTargetVariables(targetVars);
         targets.push(target);
     }
 
 });
 
 runBtn.addEventListener("click", (event) => {
-    shooting_bullet(container, bullet, targets);
+    shootingBullet(container, bullet, targets);
 });
 
