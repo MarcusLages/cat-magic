@@ -1,3 +1,32 @@
+class Target {
+    constructor(container) {
+        this.target = document.createElement("div");
+        this.target.classList.add("target");
+        this.target.style.position = "absolute";
+        this.target.style.width = "50px";
+        this.target.style.height = "50px";
+        this.container = container;
+        this.target.style.backgroundColor = "red";
+        this.container.appendChild(this.target);
+    }
+
+    placeTargetRandomly() {
+        const containerWidth = this.container.offsetWidth;
+        const containerHeight = this.container.offsetHeight;
+        const targetWidth = this.target.offsetWidth;
+        const targetHeight = this.target.offsetHeight;
+
+        const maxLeft = containerWidth - targetWidth;
+        const maxTop = containerHeight - targetHeight;
+
+        const randomLeft = Math.floor(Math.random() * (maxLeft + 1));
+        const randomTop = Math.floor(Math.random() * (maxTop + 1));
+
+        this.target.style.left = `${randomLeft}px`;
+        this.target.style.top = `${randomTop}px`;
+    }
+}
+
 function get_y(m, e, b, x) {
     return m * x**e + b
 }
@@ -10,22 +39,26 @@ function move(element, x, y) {
     element.style.top = (Number(verticleValue) + y) + "px";
 }
 
-function shooting_bullet() {
+function shooting_bullet(container, bullet) {
     let x = 0;
-    let IntervalId = setInterval(() => {
-        let y = get_y(2, 2, 0, x);
 
-        move(bullet, x, y);
-        x++;
+    const startLeft = parseFloat(window.getComputedStyle(bullet).left);
+    const startTop = parseFloat(window.getComputedStyle(bullet).top);
+
+    let IntervalId = setInterval(() => {
+        let y = get_y(2, 0, 0, x);
+
+        bullet.style.left = startLeft + x + "px";
+        bullet.style.top = startTop - y + "px";
+        x+=5;
         
-        if(finish_shooting()) {
+        if(finish_shooting(container, bullet)) {
             clearInterval(IntervalId);
-            bullet.hidden = true;
         }
-    }, 500);
+    }, 20);
 }
 
-function finish_shooting() {
+function finish_shooting(container, bullet) {
     let bulletRect = bullet.getBoundingClientRect();
     let containerRect = container.getBoundingClientRect();
 
@@ -36,8 +69,19 @@ function finish_shooting() {
 }
 
 
-
+let container = document.getElementById("container");
 let bullet = document.getElementById("bullet");
-let button = document.getElementById("button");
+let startBtn = document.getElementById("startBtn");
+let runBtn = document.getElementById("runBtn");
 
-button.addEventListener("click", shooting_bullet);
+startBtn.addEventListener("click", (event) => {
+    for (let i=0; i < 5; i++) {
+        const target = new Target(container);
+        target.placeTargetRandomly();
+    }
+});
+
+runBtn.addEventListener("click", (event) => {
+    shooting_bullet(container, bullet);
+});
+

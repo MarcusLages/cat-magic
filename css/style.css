@@ -9,9 +9,10 @@
 
 #container {
     background-color: blue;
-    position: absolute;
+    position: relative;
     width: 500px;
     height:500px;
     top: 100px;
     left: 100px;
+    overflow: hidden;
 }
