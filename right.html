@@ -373,13 +373,6 @@
       return p === "negative" ? COLORS.NEGATIVE : COLORS.POSITIVE;
     }
 
-    // For squares/diamonds, ALWAYS shrink as you go inward (fixes overlap when layer 2 & 3 are same)
-    function nonCircleScaleForLayer(L) {
-      if (L === 1) return 1.0;
-      if (L === 2) return 0.92;
-      return 0.84; // layer 3
-    }
-
     // square rule set
     function borderCountForLevel(level) {
       if (level <= 0) return 0;
@@ -394,11 +387,10 @@
       return null;
     }
 
-    // ---------- FIX #1: actually enforce locked layers ----------
     function canEditLayer(layer) {
       if (layer === 1) return true;
-      if (layer === 2) return layers[1].confirmed; // unlocked after layer 1
-      if (layer === 3) return layers[2].confirmed; // unlocked after layer 2
+      if (layer === 2) return layers[1].confirmed;
+      if (layer === 3) return layers[2].confirmed;
       return false;
     }
 
@@ -563,21 +555,21 @@
     }
 
     // Outer circle cap: returns Infinity if no outer circles exist
-    function outerCircleHalfCap(targetLayer, halfForLayer) {
+    function outerCircleHalfCap(targetLayer, radiusForLayerCircleOnly) {
       let limitingInnerR = Infinity;
 
       for (let L = 1; L < targetLayer; L++) {
         if (!layers[L].confirmed) continue;
         if (layers[L].shape !== SHAPES.CIRCLE) continue;
 
-        const outerHalf = halfForLayer(L); // outerR
-        const innerR = outerHalf - 80;
+        const outerR = radiusForLayerCircleOnly(L);
+        const innerR = outerR - 80;
         limitingInnerR = Math.min(limitingInnerR, innerR);
       }
 
       if (!Number.isFinite(limitingInnerR)) return Infinity;
 
-      const margin = 18; // increase for more separation
+      const margin = 18;
       const maxHalf = (limitingInnerR - margin) / Math.SQRT2;
       return Math.max(20, maxHalf);
     }
@@ -659,19 +651,121 @@
       }
     }
 
+    // ---------- Sizing logic ----------
+    function outerIsCircle() {
+      return layers[1].confirmed && layers[1].shape === SHAPES.CIRCLE;
+    }
+    function outerIsSquare() {
+      return layers[1].confirmed && layers[1].shape === SHAPES.SQUARE;
+    }
+
+    function computeLayerSizes() {
+      const base = Math.min(viewW, viewH);
+
+      // Circle sizing (unchanged)
+      const layer1CircleR = base * 0.35 + 80;
+
+      // FIX #1: Separate Layer 1 square vs diamond sizes
+      // - square: smaller (prevents "HUGE" square)
+      // - diamond: bigger (fixes "diamond too small")
+      const layer1SquareHalf  = base * 0.24 + 62;
+      const layer1DiamondHalf = base * 0.30 + 78;
+
+      // Inner target sizes
+      const layer2Half = base * 0.24 + 84;
+      const layer3Half = base * 0.15 + 80;
+
+      return { layer1CircleR, layer1SquareHalf, layer1DiamondHalf, layer2Half, layer3Half };
+    }
+
+    function nonCircleScale(shape, layer, layer2SameShape) {
+      // general baselines
+      const BASE = {
+        [SHAPES.SQUARE]:  { 2: 0.94, 3: 0.74 },
+        [SHAPES.DIAMOND]: { 2: 0.95, 3: 0.86 },
+      };
+
+      // Outer is circle
+      if (outerIsCircle()) {
+        if (layer === 2) {
+          if (shape === SHAPES.SQUARE) return 0.95;   // L2 square under circle: keep comfortably larger
+          if (shape === SHAPES.DIAMOND) return 1.25;  // keep L2 diamond big
+        }
+        if (layer === 3) {
+          // FIX #3: L3 square too big under outer circle → shrink more
+          if (shape === SHAPES.SQUARE) return layer2SameShape ? 0.62 : 0.68;
+          if (shape === SHAPES.DIAMOND) return BASE[SHAPES.DIAMOND][3];
+        }
+        return 1.0;
+      }
+
+      // Outer is square
+      if (outerIsSquare()) {
+        // You wanted "only change it for square; keep diamond the same as before"
+        if (shape === SHAPES.SQUARE) {
+          if (layer === 2) return 0.72;
+          // if (layer === 3) return layer2SameShape ? 0.66 : 0.72;
+        }
+
+        if (shape === SHAPES.DIAMOND) {
+          // FIX #2: when outer is square, L2 diamond too small → bump it
+          if (layer === 2) return 1.02;
+
+          // Keep L3 diamond mostly as before; only shrink if repeating to prevent overlap
+          // if (layer === 3) return layer2SameShape ? 0.74 : BASE[SHAPES.DIAMOND][3];
+          if (layer === 3) return BASE[SHAPES.DIAMOND][3];
+        }
+
+        return 1.0;
+      }
+
+      // Default
+      if (layer === 2) return (BASE[shape]?.[2] ?? 1.0);
+      if (layer === 3) {
+        if (layer2SameShape) {
+          if (shape === SHAPES.SQUARE) return 0.68;
+          if (shape === SHAPES.DIAMOND) return BASE[SHAPES.DIAMOND][3];
+        }
+        return (BASE[shape]?.[3] ?? 1.0);
+      }
+      return 1.0;
+    }
+
+    function baseHalfForLayerNonCircle(shape, layer, sizes) {
+      if (layer === 1) {
+        if (shape === SHAPES.SQUARE) return sizes.layer1SquareHalf;
+        if (shape === SHAPES.DIAMOND) return sizes.layer1DiamondHalf;
+        return sizes.layer1SquareHalf;
+      }
+      if (layer === 2) return sizes.layer2Half;
+      return sizes.layer3Half;
+    }
+
+    function radiusForLayerCircle(layer, sizes) {
+      if (layer === 1) return sizes.layer1CircleR;
+      if (layer === 2) return sizes.layer2Half;
+      return sizes.layer3Half;
+    }
+
+    function computeNonCircleHalf(shape, layer, sizes) {
+      const cap = outerCircleHalfCap(layer, (L) => radiusForLayerCircle(L, sizes));
+      const baseHalf = Math.min(baseHalfForLayerNonCircle(shape, layer, sizes), cap);
+
+      const layer2SameShape =
+        layer === 3 &&
+        layers[2].confirmed &&
+        layers[2].shape === shape;
+
+      return baseHalf * nonCircleScale(shape, layer, layer2SameShape);
+    }
+
     function draw() {
-      // After HiDPI transform, our coordinate system is CSS pixels, so clear using viewW/viewH
       ctx.clearRect(0, 0, viewW, viewH);
 
       const midX = viewW / 2;
       const midY = viewH / 2;
 
-      const base = Math.min(viewW, viewH);
-      const layer1OuterR = base * 0.35 + 80;
-      const layer2Half   = base * 0.23 + 80;
-      const layer3Half   = base * 0.15 + 80;
-
-      const halfForLayer = (L) => (L === 1 ? layer1OuterR : (L === 2 ? layer2Half : layer3Half));
+      const sizes = computeLayerSizes();
 
       // Outer layers on top: draw inner -> outer
       for (const L of [3, 2, 1]) {
@@ -682,17 +776,13 @@
         const idx   = layers[L].index;
 
         if (shape === SHAPES.CIRCLE) {
-          renderCircleLayer(midX, midY, halfForLayer(L), idx, strokeColor);
+          renderCircleLayer(midX, midY, radiusForLayerCircle(L, sizes), idx, strokeColor);
         } else if (shape === SHAPES.SQUARE) {
-          const cap = outerCircleHalfCap(L, halfForLayer);
-          const baseHalf = Math.min(halfForLayer(L), cap);
-          const safeHalf = baseHalf * nonCircleScaleForLayer(L);
-          renderSquareLayer(midX, midY, safeHalf, clamp(idx, 0, 10), strokeColor);
+          const half = computeNonCircleHalf(SHAPES.SQUARE, L, sizes);
+          renderSquareLayer(midX, midY, half, clamp(idx, 0, 10), strokeColor);
         } else if (shape === SHAPES.DIAMOND) {
-          const cap = outerCircleHalfCap(L, halfForLayer);
-          const baseHalf = Math.min(halfForLayer(L), cap);
-          const safeHalf = baseHalf * nonCircleScaleForLayer(L);
-          renderDiamondLayer(midX, midY, safeHalf, clamp(idx, 0, 10), strokeColor);
+          const half = computeNonCircleHalf(SHAPES.DIAMOND, L, sizes);
+          renderDiamondLayer(midX, midY, half, clamp(idx, 0, 10), strokeColor);
         }
       }
 
@@ -703,41 +793,52 @@
         ctx.save();
         ctx.globalAlpha = 0.55;
 
+        const sizes = computeLayerSizes();
         const strokeColor = colorForPolarity(layers[editingLayer].polarity);
-        const baseHalf = halfForLayer(editingLayer);
 
         if (previewShape === SHAPES.CIRCLE) {
-          renderCircleLayer(midX, midY, baseHalf, previewIndex, strokeColor);
+          renderCircleLayer(midX, midY, radiusForLayerCircle(editingLayer, sizes), previewIndex, strokeColor);
         } else if (previewShape === SHAPES.SQUARE) {
-          const cap = outerCircleHalfCap(editingLayer, halfForLayer);
-          const safeHalf = Math.min(baseHalf, cap) * nonCircleScaleForLayer(editingLayer);
-          renderSquareLayer(midX, midY, safeHalf, clamp(previewIndex, 0, 10), strokeColor);
+          const cap = outerCircleHalfCap(editingLayer, (L) => radiusForLayerCircle(L, sizes));
+          const baseHalf = Math.min(baseHalfForLayerNonCircle(SHAPES.SQUARE, editingLayer, sizes), cap);
+
+          const layer2SameShape =
+            editingLayer === 3 &&
+            layers[2].confirmed &&
+            layers[2].shape === SHAPES.SQUARE;
+
+          const half = baseHalf * nonCircleScale(SHAPES.SQUARE, editingLayer, layer2SameShape);
+          renderSquareLayer(midX, midY, half, clamp(previewIndex, 0, 10), strokeColor);
         } else if (previewShape === SHAPES.DIAMOND) {
-          const cap = outerCircleHalfCap(editingLayer, halfForLayer);
-          const safeHalf = Math.min(baseHalf, cap) * nonCircleScaleForLayer(editingLayer);
-          renderDiamondLayer(midX, midY, safeHalf, clamp(previewIndex, 0, 10), strokeColor);
+          const cap = outerCircleHalfCap(editingLayer, (L) => radiusForLayerCircle(L, sizes));
+          const baseHalf = Math.min(baseHalfForLayerNonCircle(SHAPES.DIAMOND, editingLayer, sizes), cap);
+
+          const layer2SameShape =
+            editingLayer === 3 &&
+            layers[2].confirmed &&
+            layers[2].shape === SHAPES.DIAMOND;
+
+          const half = baseHalf * nonCircleScale(SHAPES.DIAMOND, editingLayer, layer2SameShape);
+          renderDiamondLayer(midX, midY, half, clamp(previewIndex, 0, 10), strokeColor);
         }
 
         ctx.restore();
       }
     }
 
-    // ---------- FIX #2: HiDPI / Retina resize (crisp canvas) ----------
+    // ---------- HiDPI / Retina resize (crisp canvas) ----------
     function resize() {
       const dpr = window.devicePixelRatio || 1;
 
       viewW = window.innerWidth;
       viewH = window.innerHeight;
 
-      // CSS size
       canvas.style.width = `${viewW}px`;
       canvas.style.height = `${viewH}px`;
 
-      // Actual buffer size
       canvas.width = Math.floor(viewW * dpr);
       canvas.height = Math.floor(viewH * dpr);
 
-      // Make 1 unit in code = 1 CSS pixel
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       draw();
@@ -813,7 +914,6 @@
       syncLayerSummaries();
     }
 
-    // ---------- FIX #3: don't let user select locked layers ----------
     function setActiveLayerCard(layer) {
       if (!canEditLayer(layer)) return;
 
@@ -873,7 +973,6 @@
       previewShape = SHAPES.CIRCLE;
       previewIndex = 6;
 
-      // setActiveLayerCard already syncs + draws
       setActiveLayerCard(1);
     }
 
@@ -898,7 +997,7 @@
     minusIdxBtn.addEventListener("click", () => changeIndex(-1));
     plusIdxBtn.addEventListener("click",  () => changeIndex(+1));
 
-    // ---------- FIX #4: stop bubbling from Confirm buttons into layer card click ----------
+    // stop bubbling from Confirm buttons into layer card click
     confirm1Btn.addEventListener("click", (e) => { e.stopPropagation(); confirmLayer(1); });
     confirm2Btn.addEventListener("click", (e) => { e.stopPropagation(); confirmLayer(2); });
     confirm3Btn.addEventListener("click", (e) => { e.stopPropagation(); confirmLayer(3); });
