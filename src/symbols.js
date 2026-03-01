@@ -8,6 +8,7 @@ function make_symbol() {
             console.log(`${y} += ${p.a * Math.pow(x, p.e)}`);
             y += p.a * Math.pow(x, p.e);
         });
+        polys.length = 0;
         return y;
     }
     symbol_list.polys = polys;
